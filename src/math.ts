@@ -45,6 +45,66 @@ function mapc(
 	return clamp(map(v, l1, h1, l2, h2), l2, h2);
 }
 
+class Vec2 {
+	x: number;
+	y: number;
+	constructor(x: number, y: number) {
+		// TODO: esbuild generates __publicField() here which slows down a lot on V8
+		this.x = x;
+		this.y = y;
+	}
+	clone(): Vec2 {
+		return vec2(this.x, this.y);
+	}
+	add(...args): Vec2 {
+		const p2 = vec2(...args);
+		return vec2(this.x + p2.x, this.y + p2.y);
+	}
+	sub(...args): Vec2 {
+		const p2 = vec2(...args);
+		return vec2(this.x - p2.x, this.y - p2.y);
+	}
+	scale(...args): Vec2 {
+		const s = vec2(...args);
+		return vec2(this.x * s.x, this.y * s.y);
+	}
+	dist(...args): number {
+		const p2 = vec2(...args);
+		return Math.sqrt(
+			(this.x - p2.x) * (this.x - p2.x)
+			+ (this.y - p2.y) * (this.y - p2.y)
+		);
+	}
+	len(): number {
+		return this.dist(vec2(0, 0));
+	}
+	unit(): Vec2 {
+		return this.scale(1 / this.len());
+	}
+	normal(): Vec2 {
+		return vec2(this.y, -this.x);
+	}
+	dot(p2: Vec2): number {
+		return this.x * p2.x + this.y * p2.y;
+	}
+	angle(...args): number {
+		const p2 = vec2(...args);
+		return rad2deg(Math.atan2(this.y - p2.y, this.x - p2.x));
+	}
+	lerp(p2: Vec2, t: number): Vec2 {
+		return vec2(lerp(this.x, p2.x, t), lerp(this.y, p2.y, t));
+	}
+	toFixed(n: number): Vec2 {
+		return vec2(this.x.toFixed(n), this.y.toFixed(n));
+	}
+	eq(other: Vec2): boolean {
+		return this.x === other.x && this.y === other.y;
+	}
+	str(): string {
+		return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+	}
+}
+
 function vec2(...args): Vec2 {
 
 	if (args.length === 0) {
@@ -61,60 +121,8 @@ function vec2(...args): Vec2 {
 		}
 	}
 
-	return {
-		x: args[0],
-		y: args[1],
-		clone(): Vec2 {
-			return vec2(this.x, this.y);
-		},
-		add(...args): Vec2 {
-			const p2 = vec2(...args);
-			return vec2(this.x + p2.x, this.y + p2.y);
-		},
-		sub(...args): Vec2 {
-			const p2 = vec2(...args);
-			return vec2(this.x - p2.x, this.y - p2.y);
-		},
-		scale(...args): Vec2 {
-			const s = vec2(...args);
-			return vec2(this.x * s.x, this.y * s.y);
-		},
-		dist(...args): number {
-			const p2 = vec2(...args);
-			return Math.sqrt(
-				(this.x - p2.x) * (this.x - p2.x)
-				+ (this.y - p2.y) * (this.y - p2.y)
-			);
-		},
-		len(): number {
-			return this.dist(vec2(0, 0));
-		},
-		unit(): Vec2 {
-			return this.scale(1 / this.len());
-		},
-		normal(): Vec2 {
-			return vec2(this.y, -this.x);
-		},
-		dot(p2: Vec2): number {
-			return this.x * p2.x + this.y * p2.y;
-		},
-		angle(...args): number {
-			const p2 = vec2(...args);
-			return rad2deg(Math.atan2(this.y - p2.y, this.x - p2.x));
-		},
-		lerp(p2: Vec2, t: number): Vec2 {
-			return vec2(lerp(this.x, p2.x, t), lerp(this.y, p2.y, t));
-		},
-		toFixed(n: number): Vec2 {
-			return vec2(this.x.toFixed(n), this.y.toFixed(n));
-		},
-		eq(other: Vec2): boolean {
-			return this.x === other.x && this.y === other.y;
-		},
-		str(): string {
-			return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
-		},
-	};
+	return new Vec2(args[0], args[1]);
+
 }
 
 function dir(deg: number): Vec2 {
