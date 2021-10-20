@@ -421,7 +421,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		tex: GfxTexture = gfx.defTex,
 		shader: GfxShader = gfx.defShader,
 		uniform: Uniform = {},
-	) {
+	): Vec2[] {
 
 		tex = tex ?? gfx.defTex;
 		shader = shader ?? gfx.defShader;
@@ -445,14 +445,21 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 			gfx.iqueue.push(i + gfx.vqueue.length / STRIDE);
 		});
 
+		// track the calculated world space vertices
+		const worldVerts = [];
+
 		verts.forEach((v) => {
-			const pt = toNDC(gfx.transform.multVec2(v.pos.xy()));
+			const pos = gfx.transform.multVec2(v.pos.xy());
+			const ndc = toNDC(pos);
+			worldVerts.push(pos);
 			gfx.vqueue.push(
-				pt.x, pt.y, v.pos.z,
+				ndc.x, ndc.y, v.pos.z,
 				v.uv.x, v.uv.y,
 				v.color.r / 255, v.color.g / 255, v.color.b / 255, v.opacity,
 			);
 		});
+
+		return worldVerts;
 
 	}
 
