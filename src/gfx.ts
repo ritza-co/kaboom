@@ -40,8 +40,10 @@ import {
 	DrawCircleOpt,
 	DrawEllipseOpt,
 	DrawUVQuadOpt,
+	DrawAreaOpt,
 	Vertex,
 	DrawTextOpt,
+	Area,
 } from "./types";
 
 type GfxCtx = {
@@ -124,6 +126,7 @@ type Gfx = {
 	drawEllipse(opt: DrawEllipseOpt),
 	drawPolygon(opt: DrawPolygonOpt),
 	drawUVQuad(opt: DrawUVQuadOpt),
+	drawArea(opt: DrawAreaOpt),
 	fmtText(opt: DrawTextOpt2): FormattedText,
 	frameStart(),
 	frameEnd(),
@@ -455,7 +458,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		tex: GfxTexture = gfx.defTex,
 		shader: GfxShader = gfx.defShader,
 		uniform: Uniform = {},
-	): Vec2[] {
+	): Area {
 
 		tex = tex ?? gfx.defTex;
 		shader = shader ?? gfx.defShader;
@@ -493,7 +496,10 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 			);
 		});
 
-		return worldVerts;
+		return {
+			shape: "polygon",
+			pts: worldVerts,
+		};
 
 	}
 
@@ -774,7 +780,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 
 	}
 
-	function drawRect(opt: DrawRectOpt) {
+	function drawRect(opt: DrawRectOpt): Area {
 
 		if (opt.width === undefined || opt.height === undefined) {
 			throw new Error("drawRect() requires property \"width\" and \"height\".");
@@ -823,7 +829,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 
 	}
 
-	function drawLine(opt: DrawLineOpt) {
+	function drawLine(opt: DrawLineOpt): Area {
 
 		const { p1, p2 } = opt;
 
@@ -960,7 +966,32 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 
 	}
 
-	function drawPolygon(opt: DrawPolygonOpt) {
+	function drawArea(opt: DrawAreaOpt): Area {
+		if (!opt.area) {
+			throw new Error("drawArea() requires property \"area\".");
+		}
+		switch (opt.area.shape) {
+			case "polygon":
+				return drawPolygon({
+					...opt,
+					pts: opt.area.pts,
+				});
+			case "line":
+				return drawLine({
+					...opt,
+					p1: opt.area.p1,
+					p2: opt.area.p2,
+				});
+			case "circle":
+				return drawCircle({
+					...opt,
+					pos: opt.area.pos,
+					radius: opt.area.radius,
+				});
+		}
+	}
+
+	function drawPolygon(opt: DrawPolygonOpt): Area {
 
 		if (!opt.pts) {
 			throw new Error("drawPolygon() requires property \"pts\".");
@@ -978,6 +1009,8 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		pushRotateZ(opt.angle);
 		pushTranslate(opt.offset);
 
+		let area;
+
 		if (opt.fill !== false) {
 
 			const color = opt.color ?? rgb();
@@ -994,7 +1027,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 				.map((n) => [0, n + 1, n + 2])
 				.flat();
 
-			drawRaw(verts, opt.indices ?? indices, gfx.defTex, opt.shader, opt.uniform);
+			area = drawRaw(verts, opt.indices ?? indices, gfx.defTex, opt.shader, opt.uniform);
 
 		}
 
@@ -1008,6 +1041,8 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		}
 
 		popTransform();
+
+		return area;
 
 	}
 
@@ -1232,6 +1267,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		drawEllipse,
 		drawPolygon,
 		drawUVQuad,
+		drawArea,
 		fmtText,
 		frameStart,
 		frameEnd,

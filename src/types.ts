@@ -1642,6 +1642,18 @@ export interface KaboomCtx {
 	 */
 	testRectPoint(r: Rect, pt: Vec2): boolean,
 	/**
+	 * Check if 2 areas collide.
+	 */
+	testAreaArea(a1: Area, a2: Area): boolean,
+	/**
+	 * Check if a point is inside an area.
+	 */
+	testAreaPoint(a: Area, pt: Vec2): boolean,
+	/**
+	 * Check if an area collides with a line.
+	 */
+	testAreaLine(a: Area, l: Line): boolean,
+	/**
 	 * Define a scene.
 	 *
 	 * @section Scene
@@ -1745,7 +1757,7 @@ export interface KaboomCtx {
 	 * })
 	 * ```
 	 */
-	drawRect(options: DrawRectOpt): void,
+	drawRect(options: DrawRectOpt): Area,
 	/**
 	 * Draw a line.
 	 *
@@ -1759,7 +1771,7 @@ export interface KaboomCtx {
 	 * })
 	 * ```
 	 */
-	drawLine(options: DrawLineOpt): void,
+	drawLine(options: DrawLineOpt): Area,
 	/**
 	 * Draw lines.
 	 *
@@ -1801,7 +1813,7 @@ export interface KaboomCtx {
 	 * })
 	 * ```
 	 */
-	drawCircle(options: DrawCircleOpt): void,
+	drawCircle(options: DrawCircleOpt): Area,
 	/**
 	 * Draw an ellipse.
 	 *
@@ -1834,7 +1846,7 @@ export interface KaboomCtx {
 	 * })
 	 * ```
 	 */
-	drawPolygon(options: DrawPolygonOpt): void,
+	drawPolygon(options: DrawPolygonOpt): Area,
 	/**
 	 * Draw a rectangle with UV data.
 	 */
@@ -2746,6 +2758,21 @@ export type DrawPolygonOpt = RenderProps & {
 	 * The radius of each corner.
 	 */
 	radius?: number,
+}
+
+export type DrawAreaOpt = RenderProps & {
+	/**
+	 * The area to draw.
+	 */
+	area: Area,
+	/**
+	 * If draw an outline around the shape.
+	 */
+	outline?: Outline,
+	/**
+	 * If fill the shape with color (set this to false if you only want an outline).
+	 */
+	fill?: boolean,
 }
 
 export interface Outline {
