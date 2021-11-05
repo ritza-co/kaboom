@@ -1,4 +1,5 @@
-import fs from "fs";
+import fs from "fs/promises";
+import path from "path";
 import * as React from "react";
 import { GetServerSideProps } from "next";
 import Link from "next/link";
@@ -24,12 +25,12 @@ import Draggable from "comps/Draggable";
 import Droppable from "comps/Droppable";
 import Background from "comps/Background";
 import Doc from "comps/Doc";
-import { basename } from "lib/path";
 import download from "lib/download";
 import wrapHTML from "lib/wrapHTML";
 import Ctx from "lib/Ctx";
+import DEMO_ORDER from "public/site/demo/order.json";
 
-const DEF_DEMO = "sprite";
+const DEF_DEMO = "add";
 
 interface SpriteEntryProps {
 	name: string,
@@ -72,7 +73,7 @@ const SpriteEntry: React.FC<SpriteEntryProps> = ({
 				}}
 			/>
 		</View>
-		<Text>{basename(name)}</Text>
+		<Text>{path.basename(name)}</Text>
 	</Draggable>
 );
 
@@ -104,7 +105,7 @@ const SoundEntry: React.FC<SoundEntryProps> = ({
 		}}
 		onClick={() => new Audio(src).play()}
 	>
-		<Text>{basename(name)}</Text>
+		<Text>{path.basename(name)}</Text>
 	</View>
 );
 
@@ -141,13 +142,22 @@ const Play: React.FC<PlayProps> = ({
 	const spaceUsed = useSpaceUsed();
 	const [ make, setMake ] = React.useState(false);
 
+	// DEMO_ORDER defines the demos that should appear at the top of the list
+	// names not defined in the list just fall to their default order
+	const demoList = React.useMemo(() => {
+		return [...new Set([
+			...DEMO_ORDER,
+			...Object.keys(demos),
+		])];
+	}, [ demos ]);
+
 	React.useEffect(() => {
 		if (router.isReady && !router.query.demo) {
 			router.replace({
 				query: {
 					demo: DEF_DEMO,
 				},
-			});
+			}, undefined, { shallow: true, });
 		}
 	}, [ router ]);
 
@@ -165,7 +175,15 @@ const Play: React.FC<PlayProps> = ({
 	useClickOutside(blackboardRef, () => setBlackboard(null), [ setBlackboard ]);
 
 	return <>
-		<Head title="Kaboom Playground" scale={0.6} />
+		<Head
+			title="Kaboom Playground"
+			scale={0.6}
+			twitterPlayer={{
+				url: `https://kaboomjs.com/demo/${demo}`,
+				width: 480,
+				height: 480,
+			}}
+		/>
 		<Background dir="column" css={{ overflow: "hidden" }}>
 			<View
 				dir="row"
@@ -181,27 +199,29 @@ const Play: React.FC<PlayProps> = ({
 						desc="Back to home"
 					>
 						<Link href="/" passHref>
-							<img
-								src="/site/img/k.png"
-								css={{
-									width: 48,
-									cursor: "pointer",
-								}}
-								alt="logo"
-							/>
+							<a>
+								<img
+									src="/site/img/k.png"
+									css={{
+										width: 48,
+										cursor: "pointer",
+									}}
+									alt="logo"
+								/>
+							</a>
 						</Link>
 					</View>
 					{ !make &&
 						<Select
 							name="Demo Selector"
 							desc="Select a demo to run"
-							options={Object.keys(demos)}
+							options={demoList}
 							value={demo}
 							onChange={(demo) => router.push({
 								query: {
 									demo: demo,
 								},
-							})}
+							}, undefined, { shallow: true, })}
 						/>
 					}
 					<Button
@@ -448,21 +468,28 @@ const Play: React.FC<PlayProps> = ({
 
 // TODO: getServerSideProps is handy for dev when you're changing demos, but getStaticProps makes more sense for prod since it won't change
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-	const demos = fs
-		.readdirSync("public/site/demo")
+	const { demo } = ctx.query;
+	const demodir = (await fs.readdir("public/site/demo"))
 		.filter((p) => !p.startsWith("."))
-		.reduce<Record<string, string>>((table, file) => {
-			table[basename(file) ?? file] = fs.readFileSync(
-				`public/site/demo/${file}`,
-				"utf8"
-			);
-			return table;
-		}, {});
-	return {
-		props: {
-			demos,
-		},
-	};
+	const demos: Record<string, string> = {}
+	for (const file of demodir) {
+		const ext = path.extname(file)
+		const name = path.basename(file, ext)
+		if (ext === ".js") {
+			demos[name] = await fs.readFile(`public/site/demo/${file}`, "utf8");
+		}
+	}
+	if (!demo || demos[demo as string]) {
+		return {
+			props: {
+				demos,
+			},
+		};
+	} else {
+		return {
+			notFound: true,
+		};
+	}
 }
 
 export default Play;

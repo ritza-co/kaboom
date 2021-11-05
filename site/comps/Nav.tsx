@@ -13,7 +13,7 @@ import Markdown from "comps/Markdown";
 import Input from "comps/Input";
 import Drawer from "comps/Drawer";
 import ThemeSwitch from "comps/ThemeSwitch";
-import * as doc from "lib/doc";
+import doc from "doc.json";
 
 const popping = keyframes(`
 	0% {
@@ -29,36 +29,38 @@ const popping = keyframes(`
 
 const Logo: React.FC = () => (
 	<Link href="/" passHref>
-		<View
-			desc="Back to home"
-			rounded
-			css={{
-				"cursor": "pointer",
-			}}
-		>
-			<img
-				src="/site/img/boom.svg"
-				alt="boom"
+		<a>
+			<View
+				desc="Back to home"
+				rounded
 				css={{
-					position: "relative",
-					width: "80%",
-					left: "10%",
-					animation: `${popping} 5s infinite`,
+					"cursor": "pointer",
 				}}
-			/>
-			<img
-				src="/site/img/ka.svg"
-				alt="ka"
-				css={{
-					width: "90%",
-					position: "absolute",
-					left: "2px",
-					top: "28px",
-					animation: `${popping} 5s infinite`,
-					animationDelay: "0.08s",
-				}}
-			/>
-		</View>
+			>
+				<img
+					src="/site/img/boom.svg"
+					alt="boom"
+					css={{
+						position: "relative",
+						width: "80%",
+						left: "10%",
+						animation: `${popping} 5s infinite`,
+					}}
+				/>
+				<img
+					src="/site/img/ka.svg"
+					alt="ka"
+					css={{
+						width: "90%",
+						position: "absolute",
+						left: "2px",
+						top: "28px",
+						animation: `${popping} 5s infinite`,
+						animationDelay: "0.08s",
+					}}
+				/>
+			</View>
+		</a>
 	</Link>
 );
 
@@ -72,25 +74,27 @@ const NavLink: React.FC<NavLinkProps> = ({
 	link,
 }) => (
 	<Link href={link} passHref>
-		<View
-			focusable
-			padX={1}
-			padY={0.5}
-			rounded
-			css={{
-				cursor: "pointer",
-				position: "relative",
-				left: "-4px",
-				":hover": {
-					background: "var(--color-highlight)",
-					"> *": {
-						color: "var(--color-fghl) !important",
+		<a>
+			<View
+				focusable
+				padX={1}
+				padY={0.5}
+				rounded
+				css={{
+					cursor: "pointer",
+					position: "relative",
+					left: "-4px",
+					":hover": {
+						background: "var(--color-highlight)",
+						"> *": {
+							color: "var(--color-fghl) !important",
+						},
 					},
-				},
-			}}
-		>
-			<Text color={2}>{text}</Text>
-		</View>
+				}}
+			>
+				<Text color={2}>{text}</Text>
+			</View>
+		</a>
 	</Link>
 );
 
@@ -164,21 +168,22 @@ const IndexContent: React.FC<IndexContentProps> = ({
 			{ doc.sections.map((sec) => {
 
 				const entries = sec.entries
-					.filter((name) => query ? name.match(query) : true);
-				if (entries.length === 0) {
-					return <></>;
-				}
+					.filter((name) => query ? name.match(new RegExp(query, "i")) : true);
 
 				return (
 					<View stretchX gap={1} key={sec.name}>
 						<Text size="big" color={3}>{sec.name}</Text>
 							<View>
 								{ entries.map((name) => {
-									let dname = name;
-									const mem = doc.types[name][0];
-									if (mem.kind === "MethodSignature" || mem.kind === "FunctionDeclaration") {
-										dname += "()";
+
+									const mem = (doc as any).types["KaboomCtx"][0].members[name]?.[0] || (doc as any).types[name]?.[0];
+
+									if (mem.jsDoc?.tags["deprecated"]) {
+										return
 									}
+
+									const isFunc = mem.kind === "MethodSignature" || mem.kind === "FunctionDeclaration";
+
 									return (
 										<a key={name} href={`/#${name}`}>
 											<View
@@ -193,10 +198,11 @@ const IndexContent: React.FC<IndexContentProps> = ({
 													},
 												}}
 											>
-												<Text color={2} code>{dname}</Text>
+												<Text color={2} code>{name}{isFunc ? "()" : ""}</Text>
 											</View>
 										</a>
 									);
+
 								}) }
 							</View>
 					</View>

@@ -25,11 +25,13 @@ marked.setOptions({
 interface MarkdownProps {
 	src: string,
 	baseUrl?: string,
+	dim?: boolean,
 }
 
 const Markdown: React.FC<MarkdownProps & ViewProps> = ({
 	src,
 	baseUrl,
+	dim,
 	...args
 }) => (
 	<View
@@ -55,7 +57,7 @@ const Markdown: React.FC<MarkdownProps & ViewProps> = ({
 				fontSize: 24,
 			},
 			"h1,h2,h3,h4,h5,h6,p": {
-				color: "var(--color-fg1)",
+				color: `var(--color-fg${dim ? 2 : 1})`,
 			},
 			"p": {
 				fontSize: "var(--text-normal)",
@@ -63,8 +65,8 @@ const Markdown: React.FC<MarkdownProps & ViewProps> = ({
 				userSelect: "text",
 			},
 			"ul,ol": {
+				color: `var(--color-fg${dim ? 2 : 1})`,
 				lineHeight: 2,
-				color: "var(--color-fg1)",
 				marginLeft: 24,
 			},
 			"a": {
@@ -74,6 +76,9 @@ const Markdown: React.FC<MarkdownProps & ViewProps> = ({
 				color: "var(--color-highlight)",
 			},
 			"img": {
+				borderRadius: 8,
+			},
+			"video": {
 				borderRadius: 8,
 			},
 			"pre": {
@@ -101,6 +106,10 @@ const Markdown: React.FC<MarkdownProps & ViewProps> = ({
 				padding: "2px 6px",
 				borderRadius: 8,
 				background: "var(--color-bg2)",
+			},
+			"blockquote *": {
+				fontStyle: "italic",
+				color: "var(--color-fg3)",
 			},
 			// dim
 			[[

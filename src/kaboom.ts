@@ -3,6 +3,7 @@ import {
 	mat4,
 	quad,
 	rgb,
+	hsl2rgb,
 	rng,
 	rand,
 	randi,
@@ -63,18 +64,85 @@ import {
 } from "./logger";
 
 import {
-	Net,
-	netInit,
-} from "./net";
+	IDList,
+	downloadURL,
+	downloadBlob,
+} from "./utils";
 
 import {
-	IDList,
-} from "./utils";
+	KaboomCtx,
+	KaboomOpt,
+	AudioPlay,
+	AudioPlayOpt,
+	Vec2,
+	Mat4,
+	DrawSpriteOpt,
+	DrawTextOpt,
+	GameObj,
+	Timer,
+	EventCanceller,
+	SceneID,
+	SceneDef,
+	CompList,
+	Comp,
+	Tag,
+	Key,
+	MouseButton,
+	TouchID,
+	Collision,
+	PosComp,
+	ScaleComp,
+	RotateComp,
+	ColorComp,
+	OpacityComp,
+	Origin,
+	OriginComp,
+	LayerComp,
+	ZComp,
+	FollowComp,
+	MoveComp,
+	CleanupComp,
+	AreaCompOpt,
+	AreaComp,
+	Area,
+	SpriteData,
+	SpriteComp,
+	SpriteCompOpt,
+	GfxTexture,
+	Quad,
+	SpriteAnimPlayOpt,
+	TextComp,
+	TextCompOpt,
+	RectComp,
+	RectCompOpt,
+	UVQuadComp,
+	CircleComp,
+	Color,
+	OutlineComp,
+	TimerComp,
+	BodyComp,
+	BodyCompOpt,
+	Uniform,
+	ShaderComp,
+	SolidComp,
+	FixedComp,
+	StayComp,
+	HealthComp,
+	LifespanComp,
+	LifespanCompOpt,
+	StateComp,
+	Debug,
+	KaboomPlugin,
+	MergeObj,
+	Level,
+	LevelOpt,
+	Cursor,
+	Recording,
+} from "./types";
 
 import kaboomPlugin from "./plugins/kaboom";
 
-// @ts-ignore
-module.exports = (gopt: KaboomOpt = {}): KaboomCtx => {
+export default (gopt: KaboomOpt = {}): KaboomCtx => {
 
 const audio = audioInit();
 
@@ -131,7 +199,7 @@ function play(id: string, opt: AudioPlayOpt = {}): AudioPlay {
 			sampleRate: 44100
 		}),
 	});
-	ready(() => {
+	onLoad(() => {
 		const snd = assets.sounds[id];
 		if (!snd) {
 			throw new Error(`sound not found: "${id}"`);
@@ -434,7 +502,7 @@ function make<T>(comps: CompList<T>): GameObj<T> {
 					comp.add.call(this);
 				}
 				if (comp.load) {
-					ready(() => comp.load.call(this));
+					onLoad(() => comp.load.call(this));
 				}
 				checkDeps();
 			} else {
@@ -489,8 +557,8 @@ function make<T>(comps: CompList<T>): GameObj<T> {
 			return events[ev].pushd(cb);
 		},
 
-		action(cb: () => void): EventCanceller {
-			return this.on("update", cb);
+		action(...args): EventCanceller {
+			return this.onUpdate(...args);
 		},
 
 		trigger(ev: string, ...args): void {
@@ -531,6 +599,18 @@ function make<T>(comps: CompList<T>): GameObj<T> {
 			return info;
 		},
 
+		onUpdate(cb: () => void): EventCanceller {
+			return this.on("update", cb);
+		},
+
+		onDraw(cb: () => void): EventCanceller {
+			return this.on("draw", cb);
+		},
+
+		onDestroy(action: () => void): EventCanceller {
+			return this.on("destroy", action);
+		},
+
 	};
 
 	for (const comp of comps) {
@@ -545,7 +625,7 @@ function add<T>(comps: CompList<T>): GameObj<T> {
 	const obj = make(comps);
 	obj._id = game.objs.push(obj);
 	obj.trigger("add");
-	ready(() => obj.trigger("load"));
+	onLoad(() => obj.trigger("load"));
 	return obj;
 }
 
@@ -571,7 +651,7 @@ function on(event: string, tag: Tag, cb: (obj: GameObj, ...args) => void): Event
 
 // TODO: detect if is currently in another action?
 // add update event to a tag or global update
-function action(tag: Tag | (() => void), cb?: (obj: GameObj) => void): EventCanceller {
+function onUpdate(tag: Tag | (() => void), cb?: (obj: GameObj) => void): EventCanceller {
 	if (typeof tag === "function" && cb === undefined) {
 		return add([{ update: tag, }]).destroy;
 	} else if (typeof tag === "string") {
@@ -580,7 +660,7 @@ function action(tag: Tag | (() => void), cb?: (obj: GameObj) => void): EventCanc
 }
 
 // add draw event to a tag or global draw
-function render(tag: Tag | (() => void), cb?: (obj: GameObj) => void) {
+function onDraw(tag: Tag | (() => void), cb?: (obj: GameObj) => void) {
 	if (typeof tag === "function" && cb === undefined) {
 		return add([{ draw: tag, }]).destroy;
 	} else if (typeof tag === "string") {
@@ -589,16 +669,16 @@ function render(tag: Tag | (() => void), cb?: (obj: GameObj) => void) {
 }
 
 // add an event that runs with objs with t1 collides with objs with t2
-function collides(
+function onCollide(
 	t1: Tag,
 	t2: Tag,
-	f: (a: GameObj, b: GameObj) => void,
+	f: (a: GameObj, b: GameObj, col?: Collision) => void,
 ): EventCanceller {
-	const e1 = on("collide", t1, (a, b, dis) => b.is(t2) && f(a, b));
-	const e2 = on("collide", t2, (a, b, dis) => b.is(t1) && f(b, a));
-	const e3 = action(t1, (o1: GameObj) => {
+	const e1 = on("collide", t1, (a, b, col) => b.is(t2) && f(a, b, col));
+	const e2 = on("collide", t2, (a, b, col) => b.is(t1) && f(b, a, col));
+	const e3 = onUpdate(t1, (o1: GameObj) => {
 		if (!o1.area) {
-			throw new Error("collides() requires the object to have area() component");
+			throw new Error("onCollide() requires the object to have area() component");
 		}
 		o1._checkCollisions(t2, (o2) => {
 			f(o1, o2);
@@ -608,17 +688,23 @@ function collides(
 }
 
 // add an event that runs when objs with tag t is clicked
-function clicks(t: string, f: (obj: GameObj) => void): EventCanceller {
-	return action(t, (o: GameObj) => {
-		if (o.isClicked()) {
-			f(o);
-		}
-	});
+function onClick(tag: Tag | (() => void), cb?: (obj: GameObj) => void): EventCanceller {
+	if (typeof tag === "function") {
+		return onMousePress(tag);
+	} else {
+		return onUpdate(tag, (o: GameObj) => {
+			if (!o.area) throw new Error("onClick() requires the object to have area() component");
+			if (o.isClicked()) {
+				cb(o);
+			}
+		});
+	}
 }
 
 // add an event that runs when objs with tag t is hovered
-function hovers(t: string, onHover: (obj: GameObj) => void, onNotHover?: (obj: GameObj) => void): EventCanceller {
-	return action(t, (o: GameObj) => {
+function onHover(t: string, onHover: (obj: GameObj) => void, onNotHover?: (obj: GameObj) => void): EventCanceller {
+	return onUpdate(t, (o: GameObj) => {
+		if (!o.area) throw new Error("onHover() requires the object to have area() component");
 		if (o.isHovering()) {
 			onHover(o);
 		} else {
@@ -664,138 +750,168 @@ function loop(t: number, f: () => void): EventCanceller {
 }
 
 // input callbacks
-function keyDown(k: Key | Key[], f: () => void): EventCanceller {
+function onKeyDown(k: Key | Key[], f: () => void): EventCanceller {
 	if (Array.isArray(k)) {
-		const cancellers = k.map((key) => keyDown(key, f));
+		const cancellers = k.map((key) => onKeyDown(key, f));
 		return () => cancellers.forEach((cb) => cb());
 	} {
-		return game.on("input", () => app.keyDown(k) && f());
+		return game.on("input", () => app.isKeyDown(k) && f());
 	}
 }
 
-function keyPress(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
+function onKeyPress(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
 	if (Array.isArray(k)) {
-		const cancellers = k.map((key) => keyPress(key, f));
+		const cancellers = k.map((key) => onKeyPress(key, f));
 		return () => cancellers.forEach((cb) => cb());
 	} else if (typeof k === "function") {
-		return game.on("input", () => app.keyPressed() && k());
+		return game.on("input", () => app.isKeyPressed() && k());
 	} else {
-		return game.on("input", () => app.keyPressed(k) && f());
+		return game.on("input", () => app.isKeyPressed(k) && f());
 	}
 }
 
-function keyPressRep(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
+function onKeyPressRepeat(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
 	if (Array.isArray(k)) {
-		const cancellers = k.map((key) => keyPressRep(key, f));
+		const cancellers = k.map((key) => onKeyPressRepeat(key, f));
 		return () => cancellers.forEach((cb) => cb());
 	} else if (typeof k === "function") {
-		return game.on("input", () => app.keyPressed() && k());
+		return game.on("input", () => app.isKeyPressed() && k());
 	} else {
-		return game.on("input", () => app.keyPressedRep(k) && f());
+		return game.on("input", () => app.isKeyPressedRepeat(k) && f());
 	}
 }
 
-function keyRelease(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
+function onKeyRelease(k: Key | Key[] | (() => void), f?: () => void): EventCanceller {
 	if (Array.isArray(k)) {
-		const cancellers = k.map((key) => keyRelease(key, f));
+		const cancellers = k.map((key) => onKeyRelease(key, f));
 		return () => cancellers.forEach((cb) => cb());
 	} else if (typeof k === "function") {
-		return game.on("input", () => app.keyPressed() && k());
+		return game.on("input", () => app.isKeyPressed() && k());
 	} else {
-		return game.on("input", () => app.keyReleased(k) && f());
+		return game.on("input", () => app.isKeyReleased(k) && f());
 	}
 }
 
-function mouseDown(f: (pos: Vec2) => void): EventCanceller {
-	return game.on("input", () => app.mouseDown() && f(mousePos()));
+function onMouseDown(
+	m: MouseButton | ((pos?: Vec2) => void),
+	action?: (pos?: Vec2) => void
+): EventCanceller {
+	if (typeof m === "function") {
+		return game.on("input", () => app.isMouseDown() && m(mousePos()));
+	} else {
+		return game.on("input", () => app.isMouseDown(m) && action(mousePos()));
+	}
 }
 
-function mouseClick(f: (pos: Vec2) => void): EventCanceller {
-	return game.on("input", () => app.mouseClicked() && f(mousePos()));
+function onMousePress(
+	m: MouseButton | ((pos?: Vec2) => void),
+	action?: (pos?: Vec2) => void
+): EventCanceller {
+	if (typeof m === "function") {
+		return game.on("input", () => app.isMousePressed() && m(mousePos()));
+	} else {
+		return game.on("input", () => app.isMousePressed(m) && action(mousePos()));
+	}
 }
 
-function mouseRelease(f: (pos: Vec2) => void): EventCanceller {
-	return game.on("input", () => app.mouseReleased() && f(mousePos()));
+function onMouseRelease(
+	m: MouseButton | ((pos?: Vec2) => void),
+	action?: (pos?: Vec2) => void
+): EventCanceller {
+	if (typeof m === "function") {
+		return game.on("input", () => app.isMouseReleased() && m(mousePos()));
+	} else {
+		return game.on("input", () => app.isMouseReleased(m) && action(mousePos()));
+	}
 }
 
-function mouseMove(f: (pos: Vec2, dpos: Vec2) => void): EventCanceller {
-	return game.on("input", () => app.mouseMoved() && f(mousePos(), app.mouseDeltaPos()));
+function onMouseMove(f: (pos: Vec2, dpos: Vec2) => void): EventCanceller {
+	return game.on("input", () => app.isMouseMoved() && f(mousePos(), app.mouseDeltaPos()));
 }
 
-function charInput(f: (ch: string) => void): EventCanceller {
+function onCharInput(f: (ch: string) => void): EventCanceller {
 	return game.on("input", () => app.charInputted().forEach((ch) => f(ch)));
 }
 
 // TODO: put this in app.ts's and handle in game loop
 app.canvas.addEventListener("touchstart", (e) => {
 	[...e.changedTouches].forEach((t) => {
-		game.trigger("touchStart", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
+		game.trigger("onTouchStart", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
 	});
 });
 
 app.canvas.addEventListener("touchmove", (e) => {
 	[...e.changedTouches].forEach((t) => {
-		game.trigger("touchMove", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
+		game.trigger("onTouchMove", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
 	});
 });
 
 app.canvas.addEventListener("touchmove", (e) => {
 	[...e.changedTouches].forEach((t) => {
-		game.trigger("touchEnd", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
+		game.trigger("onTouchEnd", t.identifier, vec2(t.clientX, t.clientY).scale(1 / app.scale));
 	});
 });
 
-function touchStart(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
-	return game.on("touchStart", f);
+function onTouchStart(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
+	return game.on("onTouchStart", f);
 }
 
-function touchMove(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
-	return game.on("touchMove", f);
+function onTouchMove(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
+	return game.on("onTouchMove", f);
 }
 
-function touchEnd(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
-	return game.on("touchEnd", f);
+function onTouchEnd(f: (id: TouchID, pos: Vec2) => void): EventCanceller {
+	return game.on("onTouchEnd", f);
 }
 
 function enterDebugMode() {
 
-	keyPress("f1", () => {
+	onKeyPress("f1", () => {
 		debug.inspect = !debug.inspect;
 	});
 
-	keyPress("f2", () => {
+	onKeyPress("f2", () => {
 		debug.clearLog();
 	});
 
-	keyPress("f8", () => {
+	onKeyPress("f8", () => {
 		debug.paused = !debug.paused;
-		debug.log(`${debug.paused ? "paused" : "unpaused"}`);
 	});
 
-	keyPress("f7", () => {
-		debug.timeScale = clamp(debug.timeScale - 0.2, 0, 2);
-		debug.log(`time scale: ${debug.timeScale.toFixed(1)}`);
+	onKeyPress("f7", () => {
+		debug.timeScale = toFixed(clamp(debug.timeScale - 0.2, 0, 2), 1);
 	});
 
-	keyPress("f9", () => {
-		debug.timeScale = clamp(debug.timeScale + 0.2, 0, 2);
-		debug.log(`time scale: ${debug.timeScale.toFixed(1)}`);
+	onKeyPress("f9", () => {
+		debug.timeScale = toFixed(clamp(debug.timeScale + 0.2, 0, 2), 1);
 	});
 
-	keyPress("f10", () => {
+	onKeyPress("f10", () => {
 		debug.stepFrame();
-		debug.log(`stepped frame`);
+	});
+
+	onKeyPress("f5", () => {
+		downloadURL(app.screenshot(), "kaboom.png");
+	});
+
+	onKeyPress("f6", () => {
+		if (debug.curRecording) {
+			debug.curRecording.download();
+			debug.curRecording = null;
+		} else {
+			debug.curRecording = record();
+		}
 	});
 
 }
 
 function enterBurpMode() {
-	keyPress("b", audio.burp);
+	onKeyPress("b", audio.burp);
 }
 
 // TODO: cache sorted list
 // get all objects with tag
-function get(t?: string): GameObj[] {
+function get(t?: Tag | Tag[]): GameObj[] {
 
 	const objs = [...game.objs.values()].sort((o1, o2) => {
 
@@ -820,19 +936,19 @@ function get(t?: string): GameObj[] {
 }
 
 // apply a function to all objects currently in game with tag t
-function every<T>(t: string | ((obj: GameObj) => T), f?: (obj: GameObj) => T) {
+function every<T>(t: Tag | Tag[] | ((obj: GameObj) => T), f?: (obj: GameObj) => T) {
 	if (typeof t === "function" && f === undefined) {
 		return get().forEach((obj) => obj.exists() && t(obj));
-	} else if (typeof t === "string") {
+	} else if (typeof t === "string" || Array.isArray(t)) {
 		return get(t).forEach((obj) => obj.exists() && f(obj));
 	}
 }
 
 // every but in reverse order
-function revery<T>(t: string | ((obj: GameObj) => T), f?: (obj: GameObj) => T) {
+function revery<T>(t: Tag | Tag[] | ((obj: GameObj) => T), f?: (obj: GameObj) => T) {
 	if (typeof t === "function" && f === undefined) {
 		return get().reverse().forEach((obj) => obj.exists() && t(obj));
-	} else if (typeof t === "string") {
+	} else if (typeof t === "string" || Array.isArray(t)) {
 		return get(t).reverse().forEach((obj) => obj.exists() && f(obj));
 	}
 }
@@ -857,184 +973,6 @@ function gravity(g?: number): number {
 
 function regCursor(c: Cursor, draw: string | ((mpos: Vec2) => void)) {
 	// TODO
-}
-
-// TODO: cleaner pause logic
-function gameFrame(ignorePause?: boolean) {
-
-	game.trigger("next");
-	delete game.events["next"];
-
-	const doUpdate = ignorePause || !debug.paused;
-
-	if (doUpdate) {
-
-		// update timers
-		game.timers.forEach((t, id) => {
-			t.time -= dt();
-			if (t.time <= 0) {
-				// TODO: some timer action causes crash on FF when dt is really high, not sure why
-				t.action();
-				game.timers.delete(id);
-			}
-		});
-
-		// update every obj
-		revery((obj) => {
-			if (!obj.paused) {
-				obj.trigger("update", obj);
-			}
-		});
-
-	}
-
-	// calculate camera matrix
-	const size = vec2(width(), height());
-	const cam = game.cam;
-	const shake = dir(rand(0, 360)).scale(cam.shake);
-
-	cam.shake = lerp(cam.shake, 0, 5 * dt());
-	game.camMatrix = mat4()
-		.translate(size.scale(0.5))
-		.scale(cam.scale)
-		.rotateZ(cam.angle)
-		.translate(size.scale(-0.5))
-		.translate(cam.pos.scale(-1).add(size.scale(0.5)).add(shake))
-		;
-
-	// draw every obj
-	every((obj) => {
-
-		if (!obj.hidden) {
-
-			gfx.pushTransform();
-
-			if (!obj.fixed) {
-				gfx.applyMatrix(game.camMatrix);
-			}
-
-			obj.trigger("draw");
-			gfx.popTransform();
-
-		}
-
-	});
-
-}
-
-function drawInspect() {
-
-	let inspecting = null;
-	const font = assets.fonts[DBG_FONT];
-	const lcolor = rgb(gopt.inspectColor ?? [0, 0, 255]);
-
-	function drawInspectTxt(pos, txt) {
-
-		const s = gfx.scale();
-		const pad = vec2(6).scale(1 / s);
-
-		const ftxt = gfx.fmtText({
-			text: txt,
-			font: font,
-			size: 16 / s,
-			pos: pos.add(vec2(pad.x, pad.y)),
-			color: rgb(0, 0, 0),
-		});
-
-		const bw = ftxt.width + pad.x * 2;
-		const bh = ftxt.height + pad.x * 2;
-
-		gfx.pushTransform();
-
-		if (pos.x + bw >= width()) {
-			gfx.pushTranslate(vec2(-bw, 0));
-		}
-
-		if (pos.y + bh >= height()) {
-			gfx.pushTranslate(vec2(0, -bh));
-		}
-
-		gfx.drawRect({
-			pos: pos,
-			width: bw,
-			height: bh,
-			color: rgb(255, 255, 255),
-			outline: {
-				width: 2 / s,
-				color: rgb(0, 0, 0),
-			},
-		});
-
-		gfx.drawFmtText(ftxt);
-		gfx.popTransform();
-
-	}
-
-	// draw area outline
-	every((obj) => {
-
-		if (!obj.area) {
-			return;
-		}
-
-		if (obj.hidden) {
-			return;
-		}
-
-		const scale = gfx.scale() * (obj.fixed ? 1: (game.cam.scale.x + game.cam.scale.y) / 2);
-
-		if (!obj.fixed) {
-			gfx.pushTransform();
-			gfx.applyMatrix(game.camMatrix);
-		}
-
-		if (!inspecting) {
-			if (obj.isHovering()) {
-				inspecting = obj;
-			}
-		}
-
-		const lwidth = (inspecting === obj ? 8 : 4) / scale;
-		const a = obj.worldArea();
-		const w = a.p2.x - a.p1.x;
-		const h = a.p2.y - a.p1.y;
-
-		gfx.drawRect({
-			pos: a.p1,
-			width: w,
-			height: h,
-			outline: {
-				width: lwidth,
-				color: lcolor,
-			},
-			fill: false,
-		});
-
-		if (!obj.fixed) {
-			gfx.popTransform();
-		}
-
-	});
-
-	if (inspecting) {
-
-		const lines = [];
-		const data = inspecting.inspect();
-
-		for (const tag in data) {
-			if (data[tag]) {
-				lines.push(`${tag}: ${data[tag]}`);
-			} else {
-				lines.push(`${tag}`);
-			}
-		}
-
-		drawInspectTxt(mousePos(), lines.join("\n"));
-
-	}
-
-	drawInspectTxt(vec2(0), `FPS: ${app.fps()}`);
-
 }
 
 function makeCollision(target: GameObj<any>, dis: Vec2): Collision {
@@ -1226,7 +1164,11 @@ function scale(...args): ScaleComp {
 			this.scale = vec2(...args);
 		},
 		inspect() {
-			return `(${toFixed(this.scale.x, 2)}, ${toFixed(this.scale.y, 2)})`;
+			if (typeof this.scale === "number") {
+				return `${toFixed(this.scale, 2)}`;
+			} else {
+				return `(${toFixed(this.scale.x, 2)}, ${toFixed(this.scale.y, 2)})`;
+			}
 		},
 	};
 }
@@ -1382,16 +1324,12 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 		},
 
 		isClicked(): boolean {
-			return app.mouseClicked() && this.isHovering();
+			return app.isMousePressed() && this.isHovering();
 		},
 
 		isHovering() {
 			const mpos = this.fixed ? mousePos() : mouseWorldPos();
-			if (app.isTouch) {
-				return app.mouseDown() && this.hasPoint(mpos);
-			} else {
-				return this.hasPoint(mpos);
-			}
+			return this.hasPoint(mpos);
 		},
 
 		isColliding(other) {
@@ -1413,16 +1351,16 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 			return testRectRect2(a1, a2);
 		},
 
-		clicks(f: () => void): EventCanceller {
-			return this.action(() => {
+		onClick(f: () => void): EventCanceller {
+			return this.onUpdate(() => {
 				if (this.isClicked()) {
 					f();
 				}
 			});
 		},
 
-		hovers(onHover: () => void, onNotHover: () => void): EventCanceller {
-			return this.action(() => {
+		onHover(onHover: () => void, onNotHover: () => void): EventCanceller {
+			return this.onUpdate(() => {
 				if (this.isHovering()) {
 					onHover();
 				} else {
@@ -1433,10 +1371,22 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 			});
 		},
 
-		collides(tag: Tag, f: (o: GameObj, col?: Collision) => void): EventCanceller {
-			const e1 = this.action(() => this._checkCollisions(tag, f));
+		onCollide(tag: Tag, f: (o: GameObj, col?: Collision) => void): EventCanceller {
+			const e1 = this.onUpdate(() => this._checkCollisions(tag, f));
 			const e2 = this.on("collide", (obj, col) => obj.is(tag) && f(obj, col));
 			return () => [e1, e2].forEach((f) => f());
+		},
+
+		clicks(...args) {
+			return this.onClick(...args);
+		},
+
+		hovers(...args) {
+			return this.onHover(...args);
+		},
+
+		collides(...args) {
+			return this.onCollide(...args);
 		},
 
 		hasPoint(pt: Vec2): boolean {
@@ -1524,7 +1474,7 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 				throw new Error("failed to get area dimension");
 			}
 
-			const scale = (this.scale ?? vec2(1)).scale(this.area.scale);
+			const scale = vec2(this.scale ?? 1).scale(this.area.scale);
 
 			w *= scale.x;
 			h *= scale.y;
@@ -1710,7 +1660,7 @@ function sprite(id: string | SpriteData, opt: SpriteCompOpt = {}): SpriteComp {
 		play(name: string, opt: SpriteAnimPlayOpt = {}) {
 
 			if (!spr) {
-				ready(() => {
+				onLoad(() => {
 					this.play(name);
 				});
 				return;
@@ -1741,7 +1691,9 @@ function sprite(id: string | SpriteData, opt: SpriteCompOpt = {}): SpriteComp {
 				this.frame = anim.from;
 			}
 
+			// TODO: "animPlay" is deprecated
 			this.trigger("animPlay", name);
+			this.trigger("animStart", name);
 
 		},
 
@@ -1773,6 +1725,22 @@ function sprite(id: string | SpriteData, opt: SpriteCompOpt = {}): SpriteComp {
 			opt.flipY = b;
 		},
 
+		onAnimEnd(name: string, action: () => void): EventCanceller {
+			return this.on("animEnd", (anim) => {
+				if (anim === name) {
+					action();
+				}
+			});
+		},
+
+		onAnimStart(name: string, action: () => void): EventCanceller {
+			return this.on("animStart", (anim) => {
+				if (anim === name) {
+					action();
+				}
+			});
+		},
+
 		inspect() {
 			let msg = "";
 			if (typeof id === "string") {
@@ -1791,10 +1759,11 @@ function text(t: string, opt: TextCompOpt = {}): TextComp {
 
 	function update() {
 
-		const font = assets.fonts[this.font ?? gopt.font ?? DEF_FONT];
+		const name = this.font ?? gopt.font ?? DEF_FONT;
+		const font = assets.fonts[name];
 
 		if (!font) {
-			throw new Error(`font not found: "${font}"`);
+			throw new Error(`font not found: "${name}"`);
 		}
 
 		const ftext = gfx.fmtText({
@@ -1803,6 +1772,7 @@ function text(t: string, opt: TextCompOpt = {}): TextComp {
 			size: this.textSize,
 			font: font,
 			width: opt.width,
+			transform: opt.transform,
 		});
 
 		this.width = ftext.width / (this.scale?.x || 1);
@@ -2015,12 +1985,20 @@ function body(opt: BodyCompOpt = {}): BodyComp {
 			return curPlatform;
 		},
 
-		grounded(): boolean {
+		isGrounded() {
 			return curPlatform !== null;
 		},
 
-		falling(): boolean {
+		grounded(): boolean {
+			return this.isGrounded();
+		},
+
+		isFalling(): boolean {
 			return velY > 0;
+		},
+
+		falling(): boolean {
+			return this.isFalling();
 		},
 
 		jump(force: number) {
@@ -2030,13 +2008,29 @@ function body(opt: BodyCompOpt = {}): BodyComp {
 		},
 
 		doubleJump(force: number) {
-			if (this.grounded()) {
+			if (this.isGrounded()) {
 				this.jump(force);
 			} else if (canDouble) {
 				canDouble = false;
 				this.jump(force);
 				this.trigger("doubleJump");
 			}
+		},
+
+		onGround(action: () => void): EventCanceller {
+			return this.on("ground", action);
+		},
+
+		onFall(action: () => void): EventCanceller {
+			return this.on("fall", action);
+		},
+
+		onHeadbutt(action: () => void): EventCanceller {
+			return this.on("headbutt", action);
+		},
+
+		onDoubleJump(action: () => void): EventCanceller {
+			return this.on("doubleJump", action);
 		},
 
 	};
@@ -2097,6 +2091,15 @@ function health(hp: number): HealthComp {
 				this.trigger("death");
 			}
 		},
+		onHurt(action: () => void): EventCanceller {
+			return this.on("hurt", action);
+		},
+		onHeal(action: () => void): EventCanceller {
+			return this.on("heal", action);
+		},
+		onDeath(action: () => void): EventCanceller {
+			return this.on("death", action);
+		},
 		inspect() {
 			return `${hp}`;
 		},
@@ -2125,6 +2128,62 @@ function lifespan(time: number, opt: LifespanCompOpt = {}): LifespanComp {
 	};
 }
 
+function state(initState: string, stateList?: string[]): StateComp {
+
+	if (!initState) {
+		throw new Error("state() requires an initial state");
+	}
+
+	const events = {};
+
+	const initStateHook = (state: string) => {
+		if (!events[state]) {
+			events[state] = {
+				enter: [],
+				leave: [],
+				update: [],
+				draw: [],
+			};
+		}
+	};
+
+	return {
+		id: "state",
+		state: initState,
+		enterState(state: string, ...args) {
+			if (stateList && !stateList[state]) {
+				throw new Error(`State not found: ${state}`);
+			}
+			events[this.state].leave.forEach((action) => action());
+			this.state = state;
+			events[this.state].enter.forEach((action) => action(...args));
+		},
+		onStateEnter(state: string, action: () => void) {
+			initStateHook(state);
+			events[state].enter.push(action);
+		},
+		onStateUpdate(state: string, action: () => void) {
+			initStateHook(state);
+			events[state].update.push(action);
+		},
+		onStateDraw(state: string, action: () => void) {
+			initStateHook(state);
+			events[state].draw.push(action);
+		},
+		onStateLeave(state: string, action: () => void) {
+			initStateHook(state);
+			events[state].leave.push(action);
+		},
+		update() {
+			events[this.state].update.forEach((action) => action());
+		},
+		draw() {
+			events[this.state].draw.forEach((action) => action());
+		},
+	};
+
+}
+
 const debug: Debug = {
 	inspect: false,
 	timeScale: 1,
@@ -2133,13 +2192,12 @@ const debug: Debug = {
 	objCount(): number {
 		return game.objs.size;
 	},
-	stepFrame() {
-		gameFrame(true);
-	},
+	stepFrame: updateFrame,
 	drawCalls: gfx.drawCalls,
 	clearLog: logger.clear,
 	log: (msg) => logger.info(`[${app.time().toFixed(2)}] ${msg}`),
 	error: (msg) => logger.error(`[${app.time().toFixed(2)}] ${msg}`),
+	curRecording: null,
 	get paused() {
 		return game.paused;
 	},
@@ -2153,7 +2211,7 @@ const debug: Debug = {
 	}
 };
 
-function ready(cb: () => void): void {
+function onLoad(cb: () => void): void {
 	if (game.loaded) {
 		cb();
 	} else {
@@ -2171,7 +2229,7 @@ function go(id: SceneID, ...args) {
 		throw new Error(`scene not found: ${id}`);
 	}
 
-	game.on("next", () => {
+	const cancel = game.on("updateStart", () => {
 
 		game.events = {};
 
@@ -2214,6 +2272,8 @@ function go(id: SceneID, ...args) {
 		if (gopt.burp) {
 			enterBurpMode();
 		}
+
+		cancel();
 
 	});
 
@@ -2396,6 +2456,63 @@ function addLevel(map: string[], opt: LevelOpt): Level {
 
 }
 
+function record(frameRate?): Recording {
+
+	const stream = app.canvas.captureStream(frameRate);
+	const audioDest = audio.ctx.createMediaStreamDestination();
+
+	audio.masterNode.connect(audioDest)
+
+	const audioStream = audioDest.stream;
+	const [firstAudioTrack] = audioStream.getAudioTracks();
+
+	// TODO: Enabling audio results in empty video if no audio received
+	// stream.addTrack(firstAudioTrack);
+
+	const recorder = new MediaRecorder(stream);
+	const chunks = [];
+
+	recorder.ondataavailable = (e) => {
+		if (e.data.size > 0) {
+			chunks.push(e.data);
+		}
+	};
+
+	recorder.onerror = (e) => {
+		audio.masterNode.disconnect(audioDest)
+		stream.getTracks().forEach(t => t.stop());
+	};
+
+	recorder.start();
+
+	return {
+
+		resume() {
+			recorder.resume();
+		},
+
+		pause() {
+			recorder.pause();
+		},
+
+		download(filename = "kaboom.mp4") {
+
+			recorder.onstop = () => {
+				downloadBlob(new Blob(chunks, {
+					type: "video/mp4",
+				}), filename);
+			}
+
+			recorder.stop();
+			// cleanup
+			audio.masterNode.disconnect(audioDest)
+			stream.getTracks().forEach(t => t.stop());
+
+		}
+	};
+
+}
+
 const ctx: KaboomCtx = {
 	// asset load
 	loadRoot: assets.loadRoot,
@@ -2415,13 +2532,16 @@ const ctx: KaboomCtx = {
 	dt,
 	time: app.time,
 	screenshot: app.screenshot,
-	focused: app.focused,
+	record: record,
+	focused: app.isFocused,
+	isFocused: app.isFocused,
 	focus: app.focus,
 	cursor: app.cursor,
 	regCursor,
 	fullscreen: app.fullscreen,
 	isFullscreen: app.isFullscreen,
-	ready,
+	onLoad,
+	ready: onLoad,
 	isTouch: () => app.isTouch,
 	// misc
 	layers,
@@ -2467,37 +2587,63 @@ const ctx: KaboomCtx = {
 	move,
 	cleanup,
 	follow,
+	state,
 	// group events
 	on,
-	action,
-	render,
-	collides,
-	clicks,
-	hovers,
+	onUpdate,
+	onDraw,
+	onCollide,
+	onClick,
+	onHover,
+	action: onUpdate,
+	render: onDraw,
+	collides: onCollide,
+	clicks: onClick,
+	hovers: onHover,
 	// input
-	keyDown,
-	keyPress,
-	keyPressRep,
-	keyRelease,
-	mouseDown,
-	mouseClick,
-	mouseRelease,
-	mouseMove,
-	charInput,
-	touchStart,
-	touchMove,
-	touchEnd,
+	onKeyDown,
+	onKeyPress,
+	onKeyPressRepeat,
+	onKeyRelease,
+	onMouseDown,
+	onMousePress,
+	onMouseRelease,
+	onMouseMove,
+	onCharInput,
+	onTouchStart,
+	onTouchMove,
+	onTouchEnd,
+	keyDown: onKeyDown,
+	keyPress: onKeyPress,
+	keyPressRep: onKeyPressRepeat,
+	keyRelease: onKeyRelease,
+	mouseDown: onMouseDown,
+	mouseClick: onMousePress,
+	mouseRelease: onMouseRelease,
+	mouseMove: onMouseMove,
+	charInput: onCharInput,
+	touchStart: onTouchStart,
+	touchMove: onTouchMove,
+	touchEnd: onTouchEnd,
 	mousePos,
 	mouseWorldPos,
 	mouseDeltaPos: app.mouseDeltaPos,
-	keyIsDown: app.keyDown,
-	keyIsPressed: app.keyPressed,
-	keyIsPressedRep: app.keyPressedRep,
-	keyIsReleased: app.keyReleased,
-	mouseIsDown: app.mouseDown,
-	mouseIsClicked: app.mouseClicked,
-	mouseIsReleased: app.mouseReleased,
-	mouseIsMoved: app.mouseMoved,
+	isKeyDown: app.isKeyDown,
+	isKeyPressed: app.isKeyPressed,
+	isKeyPressedRepeat: app.isKeyPressedRepeat,
+	isKeyReleased: app.isKeyReleased,
+	isMouseDown: app.isMouseDown,
+	isMousePressed: app.isMousePressed,
+	isMouseReleased: app.isMouseReleased,
+	isMouseMoved: app.isMouseMoved,
+	keyIsDown: app.isKeyDown,
+	keyIsPressed: app.isKeyPressed,
+	keyIsPressedRep: app.isKeyPressedRepeat,
+	keyIsReleased: app.isKeyReleased,
+	mouseIsDown: app.isMouseDown,
+	mouseIsClicked: app.isMousePressed,
+	mouseIsReleased: app.isMouseReleased,
+	mouseIsMoved: app.isMouseMoved,
 	// timer
 	loop,
 	wait,
@@ -2514,6 +2660,7 @@ const ctx: KaboomCtx = {
 	vec2,
 	dir,
 	rgb,
+	hsl2rgb,
 	quad,
 	choose,
 	chance,
@@ -2576,6 +2723,15 @@ const ctx: KaboomCtx = {
 	RIGHT: vec2(1, 0),
 	UP: vec2(0, -1),
 	DOWN: vec2(0, 1),
+	// colors
+	RED: rgb(255, 0, 0),
+	GREEN: rgb(0, 255, 0),
+	BLUE: rgb(0, 0, 255),
+	YELLOW: rgb(255, 255, 0),
+	MAGENTA: rgb(255, 0, 255),
+	CYAN: rgb(0, 255, 255),
+	WHITE: rgb(255, 255, 255),
+	BLACK: rgb(0, 0, 0),
 	// dom
 	canvas: app.canvas,
 };
@@ -2598,68 +2754,357 @@ function frames() {
 	return numFrames;
 }
 
-app.run(() => {
+function updateFrame() {
 
-	numFrames++;
-	gfx.frameStart();
+	game.trigger("updateStart");
 
-	if (!game.loaded) {
+	// update timers
+	game.timers.forEach((t, id) => {
+		t.time -= dt();
+		if (t.time <= 0) {
+			// TODO: some timer action causes crash on FF when dt is really high, not sure why
+			t.action();
+			game.timers.delete(id);
+		}
+	});
 
-		// if assets are not fully loaded, draw a progress bar
-		const progress = assets.loadProgress();
+	// update every obj
+	revery((obj) => {
+		if (!obj.paused) {
+			obj.trigger("update", obj);
+		}
+	});
 
-		if (progress === 1) {
-			game.loaded = true;
-			game.trigger("load");
-		} else {
+}
 
-			const w = width() / 2;
-			const h = 24 / gfx.scale();
-			const pos = vec2(width() / 2, height() / 2).sub(vec2(w / 2, h / 2));
+function drawFrame() {
 
-			gfx.drawRect({
-				pos: vec2(0),
-				width: width(),
-				height: height(),
-				color: rgb(0, 0, 0),
-			});
+	// calculate camera matrix
+	const size = vec2(width(), height());
+	const cam = game.cam;
+	const shake = dir(rand(0, 360)).scale(cam.shake);
 
-			gfx.drawRect({
-				pos: pos,
-				width: w,
-				height: h,
-				fill: false,
-				outline: {
-					width: 4 / gfx.scale(),
-				},
-			});
+	cam.shake = lerp(cam.shake, 0, 5 * dt());
+	game.camMatrix = mat4()
+		.translate(size.scale(0.5))
+		.scale(cam.scale)
+		.rotateZ(cam.angle)
+		.translate(size.scale(-0.5))
+		.translate(cam.pos.scale(-1).add(size.scale(0.5)).add(shake))
+		;
 
-			gfx.drawRect({
-				pos: pos,
-				width: w * progress,
-				height: h,
-			});
+	// draw every obj
+	every((obj) => {
+
+		if (!obj.hidden) {
+
+			gfx.pushTransform();
+
+			if (!obj.fixed) {
+				gfx.applyMatrix(game.camMatrix);
+			}
+
+			obj.trigger("draw");
+			gfx.popTransform();
 
 		}
 
+	});
+
+}
+
+function drawLoadScreen() {
+
+	// if assets are not fully loaded, draw a progress bar
+	const progress = assets.loadProgress();
+
+	if (progress === 1) {
+		game.loaded = true;
+		game.trigger("load");
+	} else {
+
+		const w = width() / 2;
+		const h = 24 / gfx.scale();
+		const pos = vec2(width() / 2, height() / 2).sub(vec2(w / 2, h / 2));
+
+		gfx.drawRect({
+			pos: vec2(0),
+			width: width(),
+			height: height(),
+			color: rgb(0, 0, 0),
+		});
+
+		gfx.drawRect({
+			pos: pos,
+			width: w,
+			height: h,
+			fill: false,
+			outline: {
+				width: 4 / gfx.scale(),
+			},
+		});
+
+		gfx.drawRect({
+			pos: pos,
+			width: w * progress,
+			height: h,
+		});
+
+	}
+
+}
+
+function drawDebug() {
+
+	if (debug.inspect) {
+
+		let inspecting = null;
+		const font = assets.fonts[DBG_FONT];
+		const lcolor = rgb(gopt.inspectColor ?? [0, 0, 255]);
+
+		function drawInspectTxt(pos, txt) {
+
+			const s = gfx.scale();
+			const pad = vec2(6).scale(1 / s);
+
+			const ftxt = gfx.fmtText({
+				text: txt,
+				font: font,
+				size: 16 / s,
+				pos: pos.add(vec2(pad.x, pad.y)),
+				color: rgb(255, 255, 255),
+			});
+
+			const bw = ftxt.width + pad.x * 2;
+			const bh = ftxt.height + pad.x * 2;
+
+			gfx.pushTransform();
+
+			if (pos.x + bw >= width()) {
+				gfx.pushTranslate(vec2(-bw, 0));
+			}
+
+			if (pos.y + bh >= height()) {
+				gfx.pushTranslate(vec2(0, -bh));
+			}
+
+			gfx.drawRect({
+				pos: pos,
+				width: bw,
+				height: bh,
+				color: rgb(0, 0, 0),
+				radius: 4,
+				opacity: 0.8,
+			});
+
+			gfx.drawFmtText(ftxt);
+			gfx.popTransform();
+
+		}
+
+		// draw area outline
+		every((obj) => {
+
+			if (!obj.area) {
+				return;
+			}
+
+			if (obj.hidden) {
+				return;
+			}
+
+			const scale = gfx.scale() * (obj.fixed ? 1: (game.cam.scale.x + game.cam.scale.y) / 2);
+
+			if (!obj.fixed) {
+				gfx.pushTransform();
+				gfx.applyMatrix(game.camMatrix);
+			}
+
+			if (!inspecting) {
+				if (obj.isHovering()) {
+					inspecting = obj;
+				}
+			}
+
+			const lwidth = (inspecting === obj ? 8 : 4) / scale;
+			const a = obj.worldArea();
+			const w = a.p2.x - a.p1.x;
+			const h = a.p2.y - a.p1.y;
+
+			gfx.drawRect({
+				pos: a.p1,
+				width: w,
+				height: h,
+				outline: {
+					width: lwidth,
+					color: lcolor,
+				},
+				fill: false,
+			});
+
+			if (!obj.fixed) {
+				gfx.popTransform();
+			}
+
+		});
+
+		if (inspecting) {
+
+			const lines = [];
+			const data = inspecting.inspect();
+
+			for (const tag in data) {
+				if (data[tag]) {
+					lines.push(`${tag}: ${data[tag]}`);
+				} else {
+					lines.push(`${tag}`);
+				}
+			}
+
+			drawInspectTxt(mousePos(), lines.join("\n"));
+
+		}
+
+		drawInspectTxt(vec2(8), `FPS: ${app.fps()}`);
+
+	}
+
+	if (debug.paused) {
+
+		// top right corner
+		gfx.pushTransform();
+		gfx.pushTranslate(width(), 0);
+		gfx.pushScale(1 / app.scale);
+		gfx.pushTranslate(-8, 8);
+
+		const size = 32;
+
+		// bg
+		gfx.drawRect({
+			width: size,
+			height: size,
+			origin: "topright",
+			color: rgb(0, 0, 0),
+			opacity: 0.8,
+			radius: 4,
+		});
+
+		// pause icon
+		for (let i = 1; i <= 2; i++) {
+			gfx.drawRect({
+				width: 4,
+				height: size * 0.6,
+				origin: "center",
+				pos: vec2(-size / 3 * i, size * 0.5),
+				color: rgb(255, 255, 255),
+				radius: 2,
+			});
+		}
+
+		gfx.popTransform();
+
+	}
+
+	if (debug.timeScale !== 1) {
+
+		// bottom right corner
+		gfx.pushTransform();
+		gfx.pushTranslate(width(), height());
+		gfx.pushScale(1 / app.scale);
+		gfx.pushTranslate(-8, -8);
+
+		const pad = 8;
+
+		// format text first to get text size
+		const ftxt = gfx.fmtText({
+			text: debug.timeScale.toFixed(1),
+			font: assets.fonts[DBG_FONT],
+			size: 16,
+			color: rgb(255, 255, 255),
+			pos: vec2(-pad),
+			origin: "botright",
+		});
+
+		// bg
+		gfx.drawRect({
+			width: ftxt.width + pad * 2 + pad * 4,
+			height: ftxt.height + pad * 2,
+			origin: "botright",
+			color: rgb(0, 0, 0),
+			opacity: 0.8,
+			radius: 4,
+		});
+
+		// fast forward / slow down icon
+		for (let i = 0; i < 2; i++) {
+			const flipped = debug.timeScale < 1;
+			gfx.drawTriangle({
+				p1: vec2(-ftxt.width - pad * (flipped ? 2 : 3.5), -pad),
+				p2: vec2(-ftxt.width - pad * (flipped ? 2 : 3.5), -pad - ftxt.height),
+				p3: vec2(-ftxt.width - pad * (flipped ? 3.5 : 2), -pad - ftxt.height / 2),
+				pos: vec2(-i * pad * 1 + (flipped ? -pad * 0.5 : 0), 0),
+				color: rgb(255, 255, 255),
+			});
+		}
+
+		// text
+		gfx.drawFmtText(ftxt);
+
+		gfx.popTransform();
+
+	}
+
+	if (debug.curRecording) {
+
+		gfx.pushTransform();
+		gfx.pushTranslate(0, height());
+		gfx.pushScale(1 / app.scale);
+		gfx.pushTranslate(24, -24);
+
+		gfx.drawCircle({
+			radius: 12,
+			color: rgb(255, 0, 0),
+			opacity: wave(0, 1, app.time() * 4),
+		});
+
+		gfx.popTransform();
+
+	}
+
+	if (debug.showLog) {
+		logger.draw();
+	}
+
+}
+
+app.run(() => {
+
+	numFrames++;
+
+	if (!game.loaded) {
+		gfx.frameStart();
+		drawLoadScreen();
+		gfx.frameEnd();
 	} else {
 
 		// TODO: this gives the latest mousePos in input handlers but uses cam matrix from last frame
 		game.camMousePos = game.camMatrix.invert().multVec2(app.mousePos());
 		game.trigger("input");
-		gameFrame();
 
-		if (debug.inspect) {
-			drawInspect();
+		if (!debug.paused && gopt.debug !== false) {
+			updateFrame();
 		}
 
-		if (debug.showLog) {
-			logger.draw();
+		gfx.frameStart();
+		drawFrame();
+
+		if (gopt.debug !== false) {
+			drawDebug();
 		}
+
+		gfx.frameEnd();
 
 	}
-
-	gfx.frameEnd();
 
 });
 
