@@ -3397,6 +3397,10 @@ export interface SpriteComp extends Comp {
 	 * Register an event that runs when an animation is ended.
 	 */
 	onAnimEnd(name: string, action: () => void): EventCanceller,
+	/**
+	 * The area of render.
+	 */
+	renderArea: Area | null,
 }
 
 export interface TextComp extends Comp {
@@ -3461,6 +3465,10 @@ export interface RectComp extends Comp {
 	 * The radius of each corner.
 	 */
 	radius?: number,
+	/**
+	 * The area of render.
+	 */
+	renderArea: Area | null,
 }
 
 export interface CircleComp extends Comp {

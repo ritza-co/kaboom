@@ -140,7 +140,8 @@ type Gfx = {
 	pushRotateX(angle: number): void,
 	pushRotateY(angle: number): void,
 	pushRotateZ(angle: number): void,
-	applyMatrix(m: Mat4),
+	pushMatrix(m: Mat4),
+	resetMatrix(),
 	drawCalls(): number,
 };
 
@@ -576,8 +577,12 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		);
 	}
 
-	function applyMatrix(m: Mat4) {
+	function pushMatrix(m: Mat4) {
 		gfx.transform = m.clone();
+	}
+
+	function resetMatrix() {
+		gfx.transform = mat4();
 	}
 
 	function pushTranslate(...args) {
@@ -825,7 +830,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 
 		}
 
-		drawPolygon({ ...opt, offset, pts });
+		return drawPolygon({ ...opt, offset, pts });
 
 	}
 
@@ -855,7 +860,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 			opacity: opt.opacity ?? 1,
 		}));
 
-		drawRaw(verts, [0, 1, 3, 1, 2, 3], gfx.defTex, opt.shader, opt.uniform);
+		return drawRaw(verts, [0, 1, 3, 1, 2, 3], gfx.defTex, opt.shader, opt.uniform);
 
 	}
 
@@ -921,7 +926,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 	}
 
 	// TODO: origin
-	function drawCircle(opt: DrawCircleOpt) {
+	function drawCircle(opt: DrawCircleOpt): Area {
 
 		if (!opt.radius) {
 			throw new Error("drawCircle() requires property \"radius\".");
@@ -970,6 +975,9 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		if (!opt.area) {
 			throw new Error("drawArea() requires property \"area\".");
 		}
+		pushTransform();
+		// The area we get from drawXXX() is already in world space so we don't apply existing transforms
+		resetMatrix();
 		switch (opt.area.shape) {
 			case "polygon":
 				return drawPolygon({
@@ -982,13 +990,22 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 					p1: opt.area.p1,
 					p2: opt.area.p2,
 				});
+			case "rect":
+				return drawRect({
+					...opt,
+					pos: opt.area.p1,
+					width: opt.area.p2.x - opt.area.p1.x,
+					height: opt.area.p2.y - opt.area.p1.y,
+				});
 			case "circle":
 				return drawCircle({
 					...opt,
-					pos: opt.area.pos,
+					pos: opt.area.center,
 					radius: opt.area.radius,
 				});
 		}
+		popTransform();
+		return opt.area;
 	}
 
 	function drawPolygon(opt: DrawPolygonOpt): Area {
@@ -1276,9 +1293,10 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		pushRotateX,
 		pushRotateY,
 		pushRotateZ,
+		pushMatrix,
+		resetMatrix,
 		pushTransform,
 		popTransform,
-		applyMatrix,
 		drawCalls,
 		background,
 	};

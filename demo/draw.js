@@ -27,7 +27,7 @@ onDraw(() => {
 	if (isKeyDown("space")) {
 		pushTransform()
 		pushTranslate(width() / 2, height() / 2)
-		pushRotate(t(240))
+		pushRotate(t(10))
 		pushTranslate(-width() / 2, -height() / 2)
 	}
 

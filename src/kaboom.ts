@@ -1563,6 +1563,7 @@ function sprite(id: string | SpriteData, opt: SpriteCompOpt = {}): SpriteComp {
 		frame: opt.frame || 0,
 		quad: opt.quad || quad(0, 0, 1, 1),
 		animSpeed: opt.animSpeed ?? 1,
+		renderArea: null,
 
 		load() {
 
@@ -1809,8 +1810,9 @@ function rect(w: number, h: number, opt: RectCompOpt = {}): RectComp {
 		width: w,
 		height: h,
 		radius: opt.radius || 0,
+		renderArea: null,
 		draw() {
-			gfx.drawRect({
+			this.renderArea = gfx.drawRect({
 				...getRenderProps(this),
 				width: this.width,
 				height: this.height,
@@ -2802,7 +2804,7 @@ function drawFrame() {
 			gfx.pushTransform();
 
 			if (!obj.fixed) {
-				gfx.applyMatrix(game.camMatrix);
+				gfx.pushMatrix(game.camMatrix);
 			}
 
 			obj.trigger("draw");
@@ -2918,7 +2920,7 @@ function drawDebug() {
 
 			if (!obj.fixed) {
 				gfx.pushTransform();
-				gfx.applyMatrix(game.camMatrix);
+				gfx.pushMatrix(game.camMatrix);
 			}
 
 			if (!inspecting) {
@@ -2929,13 +2931,9 @@ function drawDebug() {
 
 			const lwidth = (inspecting === obj ? 8 : 4) / scale;
 			const a = obj.worldArea();
-			const w = a.p2.x - a.p1.x;
-			const h = a.p2.y - a.p1.y;
 
-			gfx.drawRect({
-				pos: a.p1,
-				width: w,
-				height: h,
+			gfx.drawArea({
+				area: a,
 				outline: {
 					width: lwidth,
 					color: lcolor,
