@@ -115,17 +115,17 @@ type Gfx = {
 		gh: number,
 		chars: string,
 	): GfxFont,
-	drawTexture(opt: DrawTextureOpt),
+	drawTexture(opt: DrawTextureOpt): Area,
 	drawText(opt: DrawTextOpt2),
 	drawFmtText(ftext: FormattedText),
-	drawRect(opt: DrawRectOpt),
+	drawRect(opt: DrawRectOpt): Area,
 	drawLine(opt: DrawLineOpt),
 	drawLines(opt: DrawLinesOpt),
 	drawTriangle(opt: DrawTriangleOpt),
 	drawCircle(opt: DrawCircleOpt),
 	drawEllipse(opt: DrawEllipseOpt),
 	drawPolygon(opt: DrawPolygonOpt),
-	drawUVQuad(opt: DrawUVQuadOpt),
+	drawUVQuad(opt: DrawUVQuadOpt): Area,
 	drawArea(opt: DrawAreaOpt),
 	fmtText(opt: DrawTextOpt2): FormattedText,
 	frameStart(),
@@ -631,7 +631,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 	}
 
 	// draw a uv textured quad
-	function drawUVQuad(opt: DrawUVQuadOpt) {
+	function drawUVQuad(opt: DrawUVQuadOpt): Area {
 
 		if (opt.width === undefined || opt.height === undefined) {
 			throw new Error("drawUVQuad() requires property \"width\" and \"height\".");
@@ -655,7 +655,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 		pushScale(opt.scale);
 		pushTranslate(offset);
 
-		drawRaw([
+		const area = drawRaw([
 			{
 				pos: vec3(-w / 2, h / 2, 0),
 				uv: vec2(opt.flipX ? q.x + q.w : q.x, opt.flipY ? q.y : q.y + q.h),
@@ -684,12 +684,12 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 
 		popTransform();
 
+		return area;
+
 	}
 
 	// TODO: clean
-	function drawTexture(
-		opt: DrawTextureOpt,
-	) {
+	function drawTexture(opt: DrawTextureOpt): Area {
 
 		if (!opt.tex) {
 			throw new Error("drawTexture() requires property \"tex\".");
@@ -738,7 +738,7 @@ function gfxInit(gl: WebGLRenderingContext, gopt: GfxOpt): Gfx {
 				scale.x = scale.y;
 			}
 
-			drawUVQuad({
+			return drawUVQuad({
 				...opt,
 				// @ts-ignore
 				scale: scale.scale(opt.scale || vec2(1)),

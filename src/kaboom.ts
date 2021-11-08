@@ -221,7 +221,7 @@ function mouseWorldPos(): Vec2 {
 }
 
 // wrapper around gfx.drawTexture to integrate with sprite assets mananger / frame anim
-function drawSprite(opt: DrawSpriteOpt) {
+function drawSprite(opt: DrawSpriteOpt): Area {
 	if (!opt.sprite) {
 		throw new Error(`drawSprite() requires property "sprite"`);
 	}
@@ -239,7 +239,7 @@ function drawSprite(opt: DrawSpriteOpt) {
 	if (!q) {
 		throw new Error(`frame not found: ${opt.frame ?? 0}`);
 	}
-	gfx.drawTexture({
+	return gfx.drawTexture({
 		...opt,
 		tex: spr.tex,
 		quad: q.scale(opt.quad || quad(0, 0, 1, 1)),
@@ -1338,7 +1338,9 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 			}
 			const a1 = this.worldArea();
 			const a2 = other.worldArea();
-			return testAreaArea(a1, a2);
+			if (a1 && a2) {
+				return testAreaArea(a1, a2);
+			}
 		},
 
 		isTouching(other) {
@@ -1466,6 +1468,8 @@ function area(opt: AreaCompOpt = {}): AreaComp {
 		// TODO: cache
 		// TODO: use matrix mult for more accuracy and rotation?
 		worldArea(): Area {
+
+			return this.renderArea;
 
 			let w = this.area.width ?? this.width;
 			let h = this.area.height ?? this.height;
@@ -1595,7 +1599,7 @@ function sprite(id: string | SpriteData, opt: SpriteCompOpt = {}): SpriteComp {
 		},
 
 		draw() {
-			drawSprite({
+			this.renderArea = drawSprite({
 				...getRenderProps(this),
 				sprite: spr,
 				frame: this.frame,

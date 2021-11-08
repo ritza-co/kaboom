@@ -1726,7 +1726,7 @@ export interface KaboomCtx {
 	 * })
 	 * ```
 	 */
-	drawSprite(options: DrawSpriteOpt): void,
+	drawSprite(options: DrawSpriteOpt): Area,
 	/**
 	 * Draw a piece of text.
 	 *
