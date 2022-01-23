@@ -1,42 +1,8 @@
-### v2000.2.9
+# v2001.0.0 "A Kaboom Odyssey"
 
-- allow transparent background with the 4th element in `background` option to `kaboom()`, e.g. `[0, 0, 0, 0]`
+- raised esbuild target to `esnext`
 
-### v2000.2.8
-
-- fixed `onUpdate()` and `onDraw()` events kept running when scene changes
-
-### v2000.2.7
-
-- fixed `quad` option on `sprite()` not working
-
-### v2000.2.6
-
-- fixed text always being wrapped if updated
-- fixed text comp properties `letterSpacing`, `charSpacing`, `transform`, `styles` not being exposed
-
-### v2000.2.5
-
-- fixed updating `font` property on gameobj not updating the text font
-
-### v2000.2.4
-
-- fixed `focus()` not properly exported
-- deprecated `focus()` in favor of `canvas.focus()` due to name collision
-
-### v2000.2.3
-
-- fixed `kaboom.d.ts` completely messed up
-
-### v2000.2.2
-
-- fixed doc for `TextCompOpt#styles` and `DrawTextOpt#styles`
-
-### v2000.2.1
-
-- fixed updates not running at all when `kaboom({ debug: false })`
-
-## v2000.2.0 "Fancy Text Mode"
+# v2000.2.0 "Fancy Text Mode"
 
 - added `formatText()` and `drawFormattedText()`
 - added `charSpacing` and `lineSpacing` in `TextCompOpt` and `DrawTextOpt`
