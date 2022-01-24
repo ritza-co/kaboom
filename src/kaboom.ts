@@ -3452,7 +3452,7 @@ function color(...args): ColorComp {
 		id: "color",
 		color: rgb(...args),
 		inspect() {
-			return this.color.str();
+			return this.color.toString();
 		},
 	};
 }
@@ -3482,7 +3482,7 @@ function origin(o: Origin | Vec2): OriginComp {
 			if (typeof this.origin === "string") {
 				return this.origin;
 			} else {
-				return this.origin.str();
+				return this.origin.toString();
 			}
 		},
 	};
