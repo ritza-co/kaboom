@@ -466,10 +466,6 @@ export interface KaboomCtx {
 	 */
 	cleanup(opt?: CleanupCompOpt): CleanupComp,
 	/**
-	 * @deprecated v2000.2 Use cleanup() with optional CleanupCompOpt instead of single time argument.
-	 */
-	cleanup(delay?: number): CleanupComp,
-	/**
 	 * Follow another game obj's position.
 	 */
 	follow(obj: GameObj | null, offset?: Vec2): FollowComp,
@@ -888,78 +884,6 @@ export interface KaboomCtx {
 	 */
 	onTouchEnd(action: (id: TouchID, pos: Vec2) => void): EventCanceller,
 	/**
-	 * @deprecated v2000.1 Use onUpdate() instead
-	 */
-	action: KaboomCtx["onUpdate"],
-	/**
-	 * @deprecated v2000.1 Use onDraw() instead
-	 */
-	render: KaboomCtx["onDraw"],
-	/**
-	 * @deprecated v2000.1 Use onLoad() instead.
-	 */
-	ready: KaboomCtx["onLoad"],
-	/**
-	 * @deprecated v2000.1 Use onCollide() instead
-	 */
-	collides: KaboomCtx["onCollide"],
-	/**
-	 * @deprecated v2000.1 Use onClick() instead
-	 */
-	clicks: KaboomCtx["onClick"],
-	/**
-	 * @deprecated v2000.1 Use onHover() instead
-	 */
-	hovers: KaboomCtx["onHover"],
-	/**
-	 * @deprecated v2000.1 Use onKeyDown() instead.
-	 */
-	keyDown: KaboomCtx["onKeyDown"],
-	/**
-	 * @deprecated v2000.1 Use onKeyPress() instead.
-	 */
-	keyPress: KaboomCtx["onKeyPress"],
-	/**
-	 * @deprecated v2000.1 Use onKeyPressRepeat() instead.
-	 */
-	keyPressRep: KaboomCtx["onKeyPressRepeat"],
-	/**
-	 * @deprecated v2000.1 Use onKeyRelease() instead.
-	 */
-	keyRelease: KaboomCtx["onKeyRelease"],
-	/**
-	 * @deprecated v2000.1 Use onCharInput() instead.
-	 */
-	charInput: KaboomCtx["onCharInput"],
-	/**
-	 * @deprecated v2000.1 Use onClick() or onMousePress() instead.
-	 */
-	mouseClick: KaboomCtx["onMousePress"],
-	/**
-	 * @deprecated v2000.1 Use onMouseRelease() instead.
-	 */
-	mouseRelease: KaboomCtx["onMouseRelease"],
-	/**
-	 * @deprecated v2000.1 Use onMouseDown() instead.
-	 */
-	mouseDown: KaboomCtx["onMouseDown"],
-	/**
-	 * @deprecated v2000.1 Use onMouseMove() instead.
-	 */
-	mouseMove: KaboomCtx["onMouseMove"],
-	/**
-	 * @deprecated v2000.1 Use onTouchStart() instead.
-	 */
-	touchStart: KaboomCtx["onTouchStart"],
-	/**
-	 * @deprecated v2000.1 Use onTouchMove() instead.
-	 */
-	touchMove: KaboomCtx["onTouchMove"],
-	/**
-	 * @deprecated v2000.1 Use onTouchEnd() instead.
-	 */
-	touchEnd: KaboomCtx["onTouchEnd"],
-	/**
 	 * Sets the root for all subsequent resource urls.
 	 *
 	 * @section Assets
@@ -1213,12 +1137,6 @@ export interface KaboomCtx {
 	 */
 	mousePos(): Vec2,
 	/**
-	 * Get current mouse position (after camera transform).
-	 *
-	 * @deprecated v2000.2 Use toWorld(mousePos()) instead.
-	 */
-	mouseWorldPos(): Vec2,
-	/**
 	 * How much mouse moved last frame.
 	 */
 	mouseDeltaPos(): Vec2,
@@ -1390,42 +1308,6 @@ export interface KaboomCtx {
 	 * If currently in fullscreen mode.
 	 */
 	isFullscreen(): boolean,
-	/**
-	 * @deprecated v2000.1 Use isKeyDown() instead.
-	 */
-	keyIsDown: KaboomCtx["isKeyDown"],
-	/**
-	 * @deprecated v2000.1 Use isKeyPressed() instead.
-	 */
-	keyIsPressed: KaboomCtx["isKeyPressed"],
-	/**
-	 * @deprecated v2000.1 Use isKeyPressedRepeat() instead.
-	 */
-	keyIsPressedRep: KaboomCtx["isKeyPressedRepeat"],
-	/**
-	 * @deprecated v2000.1 Use isKeyReleased() instead.
-	 */
-	keyIsReleased: KaboomCtx["isKeyReleased"],
-	/**
-	 * @deprecated v2000.1 Use isMouseDown() instead.
-	 */
-	mouseIsDown: KaboomCtx["isMouseDown"],
-	/**
-	 * @deprecated v2000.1 Use isMouseClicked() instead.
-	 */
-	mouseIsClicked: KaboomCtx["isMouseClicked"],
-	/**
-	 * @deprecated v2000.1 Use isMouseReleased() instead.
-	 */
-	mouseIsReleased: KaboomCtx["isMouseReleased"],
-	/**
-	 * @deprecated v2000.1 Use isMouseMoved() instead.
-	 */
-	mouseIsMoved: KaboomCtx["isMouseMoved"],
-	/**
-	 * @deprecated v2000.1 Use isFocused() instead.
-	 */
-	focused(): boolean,
 	/**
 	 * Run the callback after n seconds.
 	 *
@@ -1653,10 +1535,6 @@ export interface KaboomCtx {
 		h2: number,
 	): number,
 	/**
-	 * @deprecated v2000.2 Use Vec2.fromAngle instead.
-	 */
-	dir(deg: number): Vec2,
-	/**
 	 * Interpolate between 2 values (Optionally takes a custom periodic function, which default to Math.sin).
 	 *
 	 * @example
@@ -1678,10 +1556,6 @@ export interface KaboomCtx {
 	 * Convert radians to degrees.
 	 */
 	rad2deg(rad: number): number,
-	/**
-	 * Make a new random number generator.
-	 */
-	rng(seed: number): RNG,
 	/**
 	 * Check if 2 lines intersects, if yes returns the intersection point.
 	 */
@@ -2324,12 +2198,6 @@ export interface GameObjRaw {
 	 * @since v2000.1
 	 */
 	onDestroy(action: () => void): EventCanceller,
-	/**
-	 * Register an event that runs every frame as long as the game obj exists (alias to onUpdate).
-	 *
-	 * @deprecated v2000.1 Use onUpdate() instead.
-	 */
-	action: GameObjRaw["onUpdate"],
 }
 
 /**
@@ -2585,14 +2453,6 @@ export interface AudioPlay {
 	 * Set audio to not play in loop.
 	 */
 	unloop(): void,
-	/**
-	 * @deprecated v2000.1 Use isPaused() instead.
-	 */
-	paused(): boolean,
-	/**
-	 * @deprecated v2000.1 Use isStopped() instead.
-	 */
-	stopped(): boolean,
 }
 
 // TODO: hide
@@ -3138,10 +2998,6 @@ export declare class Vec2 {
 	toFixed(n: number): Vec2
 	eq(p: Vec2): boolean
 	toString(): string
-	/**
-	 * @deprecated v2000.2 Use toString() instead.
-	 */
-	str(): string
 }
 
 export declare class Vec3 {
@@ -3220,10 +3076,6 @@ export declare class Color {
 	mult(other: Color): Color;
 	eq(c: Color): boolean;
 	toString(): string;
-	/**
-	 * @deprecated v2000.2 Use toString() instead.
-	 */
-	str(): string;
 }
 
 export declare class Quad {
@@ -3567,18 +3419,6 @@ export interface AreaComp extends Comp {
 	 * Get the geometry data for the collider in screen coordinate space.
 	 */
 	screenArea(): Area,
-	/**
-	 * @deprecated v2000.1 Use onCollide() instead.
-	 */
-	collides: AreaComp["onCollide"],
-	/**
-	 * @deprecated v2000.1 Use onClick() instead.
-	 */
-	clicks: AreaComp["onClick"],
-	/**
-	 * @deprecated v2000.1 Use onHover() instead.
-	 */
-	hovers: AreaComp["onHover"],
 }
 
 export interface SpriteCompOpt {
@@ -3952,14 +3792,6 @@ export interface BodyComp extends Comp {
 	 * @since v2000.1
 	 */
 	onDoubleJump(action: () => void): EventCanceller,
-	/**
-	 * @deprecated v2000.1 Use isGrounded() instead.
-	 */
-	grounded(): boolean,
-	/**
-	 * @deprecated v2000.1 Use isFalling() instead.
-	 */
-	falling(): boolean,
 }
 
 export interface BodyCompOpt {
