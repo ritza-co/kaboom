@@ -1028,7 +1028,7 @@ export interface KaboomCtx {
 	 * loadFont("04b03", "fonts/04b03.png", 6, 8)
 	 *
 	 * // load a font with custom characters
-	 * loadFont("cp437", "cp437.png", 6, 8, {chars: "☺☻♥♦♣♠"}) 
+	 * loadFont("myfont", "myfont.png", 6, 8, { chars: "☺☻♥♦♣♠" })
 	 * ```
 	 */
 	loadFont(
@@ -2542,7 +2542,7 @@ export interface RenderProps {
 	color?: Color,
 	opacity?: number,
 	fixed?: boolean,
-	shader?: GfxShader,
+	shader?: GfxShader | string,
 	uniform?: Uniform,
 }
 
@@ -3786,7 +3786,8 @@ export type UniformValue =
 	| Mat4
 	;
 
-export type Uniform = Record<string, UniformValue>;
+export type UniformKey = Exclude<string, "u_tex">;
+export type Uniform = Record<UniformKey, UniformValue>;
 
 export interface ShaderComp extends Comp {
 	uniform: Uniform,
