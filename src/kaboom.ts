@@ -5422,7 +5422,7 @@ function handleErr(msg: string) {
 }
 
 window.addEventListener("error", (e) => {
-	handleErr(e.error.message);
+	handleErr(e.error instanceof Error ? e.error.message : e.error);
 });
 
 window.addEventListener("unhandledrejection", (e) => {
