@@ -5567,7 +5567,6 @@ const ctx: KaboomCtx = {
 	screenshot,
 	record,
 	isFocused,
-	focus,
 	cursor,
 	regCursor,
 	fullscreen,
