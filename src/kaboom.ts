@@ -4225,11 +4225,11 @@ function text(t: string, opt: TextCompOpt = {}): TextComp {
 			text: obj.text + "",
 			size: obj.textSize,
 			font: obj.font,
-			width: obj.width,
-			letterSpacing: opt.letterSpacing,
-			lineSpacing: opt.lineSpacing,
-			transform: opt.transform,
-			styles: opt.styles,
+			width: opt.width && obj.width,
+			letterSpacing: obj.letterSpacing,
+			lineSpacing: obj.lineSpacing,
+			transform: obj.transform,
+			styles: obj.styles,
 		});
 
 		obj.width = ftext.width / (obj.scale?.x || 1);
