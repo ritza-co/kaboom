@@ -121,17 +121,13 @@ const Title: React.FC<{
 			select
 			size={small ? "normal" : "big"}
 		>
-			{ small ? (
-				<>{data.name}</>
-			) : (
-				<DocCtx.Consumer>
-					{(ctx) => <Link href={`#${ctx.anchor}`}>
-						<a onClick={ctx.onAnchor}>
-							{data.name}
-						</a>
-					</Link>}
-				</DocCtx.Consumer>
-			) }
+			<DocCtx.Consumer>
+				{(ctx) => <Link href={`#${ctx.anchor}`}>
+					<a onClick={ctx.onAnchor}>
+						{data.name}
+					</a>
+				</Link>}
+			</DocCtx.Consumer>
 			{children}
 		</Text>
 	</View>
