@@ -5461,6 +5461,10 @@ const ctx: KaboomCtx = {
 	loadPedit,
 	loadBean,
 	load,
+	getSprite,
+	getSound,
+	getFont,
+	getShader,
 	SpriteData,
 	SoundData,
 	// query
