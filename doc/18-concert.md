@@ -1,24 +1,22 @@
-# Sprite Concert with Kaboom
+# Sprite concert with Kaboom
 
-In this tutorial, we'll learn about several concepts from the kaboom framework by creating an outdoor concert, which is a fun way in which we will show how to implement all of these concepts to work together.
+In this tutorial, we'll learn about several concepts from the Kaboom framework by creating an outdoor concert, which is a fun way to learn how to implement these concepts so that they work together.
 
 Some of the concepts we're going to learn about include:
 
-* Adding Audio
-* Adding Text on Screen
-* Moving Camera Positions
-* Spawning Game Objects
-* Animating Sprites
-
+* Adding audio
+* Adding text on screen
+* Moving camera positions
+* Spawning game objects
+* Animating sprites
 
 ![concert](concert.png)
 
-You can find the code for this tutorial at this [link](https://replit.com/@ritza/kaboom-concert).
+You can find the code for this tutorial [on our repl](https://replit.com/@ritza/kaboom-concert).
 
+## Concert  set up
 
-## Concert  Setup
-
-To begin, let's initialize a kaboom context by adding the following code into your program:
+To begin, let's initialize a Kaboom context by adding the following code to our program:
 
 ```javascript
 kaboom({
@@ -27,7 +25,9 @@ kaboom({
 })
 ```
 
-This code will create a nice sky-blue background for the context. Let's import all of the sprites and sounds that we will be using in our program from Kaboom:
+Here we create a nice sky-blue background for the context.
+
+Let's import all the sprites and sounds we'll be using:
 
 ```javascript
 loadSprite("bean", "/sprites/bean.png")
@@ -46,6 +46,7 @@ loadSound("bell", "/sounds/bell.mp3")
 loadSound("kaboom2000", "/sounds/kaboom2000.mp3")
 
 ```
+
 We're going to declare a few constants for our concert. Add this code below the sprite imports:
 
 ```javascript
@@ -62,11 +63,11 @@ gravity(2400)
 
 ```
 
-In the code above, we've declared the height of the platform our sprites will be working on; the jump force for our main "player" sprite, the movement speed of all sprites as well as that of our main player sprite.
+In the code above, we've declared the height of the platform our sprites will be working on, the jump force for our main "player" sprite, the movement speed of all the sprites, and the movement speed of our main player sprite.
 
-The variables "started" and "burping" are boolean values that will be changed if a specific condition is met, resultantly causing a different event to take place. The "started" variable will check if the music is started, if not it will turn true and "music" will hold the sound and play it as the background music for the program.
+The variables `started` and `burping` are boolean values that will be changed if a specific condition is met, causing a different event to take place. The `started` variable will check if the music is started, if not it will turn true and `music` will hold the sound and play it as the background music for the program.
 
-Let's also add a platform for our sprites to walk and land on. Add the following code to your program:
+Let's add a platform for our sprites to walk and land on. Add the following code to your program:
 
 ```javascript
 for (let x = 0; x < width(); x += 64) {
@@ -79,7 +80,8 @@ for (let x = 0; x < width(); x += 64) {
 	])
 }
 ```
-Using the for loop above, we use the "grass" sprite to create a platform for the game. The parameters `let x = 0; x < width(); x += 64` let us keep adding a new grass sprite to the screen until we cover the entire width of the game screen, in which case x will be greater than the screen width.
+
+Using the for loop above, we use the `"grass"` sprite to create a platform for the game. The parameters `let x = 0; x < width(); x += 64` let us keep adding a new grass sprite to the screen until we cover the entire width of the game screen, in which case x will be greater than the screen width.
 
 We need to add our player sprite so that we can test some of the functionality as we implement our program. Add the following code below the previous for loop:
 
@@ -94,7 +96,7 @@ const player = add([
 ])
 ```
 
-The `area()` and `body()` functions let us give the player a physical body in which we can react to the gravity in the game.
+The `area()` and `body()` functions let us give the player a physical body which can react to the gravity in the game.
 
 ## Party music
 
@@ -113,7 +115,8 @@ const gh = 140
 const maxRow = 4
 const notes = [ 0, 2, 4, 5, 6, 7, 8, 9, 11, 12, ]
 ```
-These constant variables define the number of "note" sprites we want in the game; the position of each sprite relative to the width and height of the game screen; as well as the max number of "note" sprites per row.
+
+These constant variables define the number of `note` sprites we want in the game, the position of each sprite relative to the width and height of the game screen, and the maximum number of `note` sprites per row.
 
 Add the following code below the variables:
 
@@ -137,11 +140,12 @@ for (let i = 1; i <= maxRow; i++) {
 	}
 }
 ```
-The code above will generate rows of "note" sprites. The `solid()` function makes sure that no other game object can pass through the notes. This line of code, `n === 0 ? "burp" : "note"` gives each sprite a name of "note" unless it is the last note sprite which would have a name of "burp" to identify with.
-  
-The "bell" sound is the one we will be using for each note sprite, this line of code `{ detune: notes[9 - n] * 100 + -800, }` will decrease the tune of sound with each note sprite we add.
 
-The `bounce()` function we will define in the next section of code we create. Add the following below the for loops:
+The code above will generate rows of `note` sprites. The `solid()` function makes sure that no other game object can pass through the notes. This line of code: `n === 0 ? "burp" : "note"` gives each sprite the name "note", unless it is the last note sprite, in which case it's given the name "burp".
+  
+The "bell" sound is the one we will be using for each note sprite. This line of code: `{ detune: notes[9 - n] * 100 + -800, }` will decrease the tone of sound with each note sprite we add.
+
+Let's add a function to handle collisions between the player and the notes. Add the following below the for loops:
 
 ```javascript
 function bounce() {
@@ -169,8 +173,7 @@ function bounce() {
 }
 ```
 
-This function will create a fun bouncing effect when the "player" collides with the "note" sprites. When the collision happens, the `vec2()` function will be used to increase the size of the "note" sprite and then return it to its original size, this scaling effect makes it appear as if it is bouncing without having to displace it.
-
+Here our `bounce()` function will create a fun bouncing effect when the player collides with a note sprite. The `vec2()` function will increase the size of the note sprite and then return it to its original size, making it appear as if the sprite is bouncing without having to displace it.
 
 Now for the actual sound, let's add the following code below the bounce function:
 
@@ -200,17 +203,17 @@ player.onHeadbutt((block) => {
 })
 ```
 
-The `onHeadButt()` is a function we use to register the collision between the player and any other solid game object. We pass it the name of the object our player is colliding with and execute specific actions if it is. In this case, we want to register collisions with the "note" sprites and play background music for the first collision, and the "bell" sound assigned to each sprite. 
+We use the `onHeadButt()` function to register the collision between the player and any other solid game object. We pass it the name of the object our player collides with, and execute specific actions if it is a note sprite or our final "burp" sprite.
 
+The first collision with a note sprite starts the background music playing, and all collisions with note sprites play the "bell" sound assigned to them.
 
-Remember the name of the last note sprite is "burp" and it has to play a different sound than the rest of the sprites when it collides with the "player" sprite. We use an if-else statement in `onHeadButt()` function to specify the different behaviors of each sprite upon collision. While the note sounds will bounce and play a bell sound, the "burp" sprite will stop the music and end our concert and all other sprite activities.
+Remember, the name of the last note sprite is "burp". This sprite will play a different sound when our player collides with it. We use an if-else statement in `onHeadButt()` function to specify the different behaviors of each sprite upon collision. While the note sprites will bounce and play a bell sound, the "burp" sprite will stop the music and end our concert and all other sprite activities.
 
-## Karaoke Text
+## Karaoke text
 
-In this section, we'll learn how to and text to the screen using the `text()` function. The text we'll use will be lyrics from the "kaboom2000" sound clip we've imported from Kaboom.
+Let's take a look at how to add text to the screen using the `text()` function. The text we'll use will be lyrics from the "kaboom2000" sound clip we imported.
 
-
-Add the following code below the  `onHeadButt()` function:
+Add the following code below the `onHeadButt()` function:
 
 ```javascript
 const lyrics = "kaboom2000 is out today, i have to go and try it out now... oh it's so fun it's so fun it's so fun...... it's so fun it's so fun it's so fun!"
@@ -232,16 +235,17 @@ const caption = add([
 caption.hidden = true
 caption.paused = true
 ```
-In the code above, we created a variable to hold the lyrics of the background music we want to add. The `caption` object, we will use to display the lyrics across the screen when the sound starts to play.
 
-The `transform()` function is used to glide the text across the screen. The `scale` and `angle` and attributes make use of the `wave()` function to animate the text as it moves across the screen. `hsl2rgb()` is used to add random colors to each letter in the text.
+Here we create a variable to hold the lyrics of the background music. We use the `caption` object to display the lyrics across the screen when the sound starts to play.
 
-## Camera Positioning
+The `transform()` function is used to glide the text across the screen. The `scale` and `angle` and attributes make use of the `wave()` function to animate the text as it moves across the screen. We use `hsl2rgb()` to add random colors to each letter in the text.
 
-Another cool function to use in Kaboom is the `CamPos()` function. Using this function, we can move the camera to focus on the player position. The `camScale()` can scale up on the players' position, creating a camera zoom-in effect. We'll add this function for when our "player" sprite collides with the "burp" sprite.
+## Camera positioning
+
+Another cool function to use in Kaboom is the `CamPos()` function. Using this function, we can move the camera to focus on the player position. The `camScale()` can scale up on the player's position, creating a camera zoom-in effect. We'll add this function for when our "player" sprite collides with the "burp" sprite.
 
 
-Add the following sprite below `caption.paused = true` variable:
+Add the following function below `caption.paused = true` variable:
 
 ```javascript
 onUpdate(() => {
@@ -266,9 +270,10 @@ function jump() {
 	}
 }
 ```
-In the code above, we created a `jump()` function for the "player" sprite, which checks if the player `isGrounded()` on a platform before making them jump. We can specify the jumping force we declared at the beginning of the tutorial by passing inside the `jump()` function for how high the sprite can jump. The `body()` component given to the "player" object is what allows to be able to use the `jump()` function from kaboom.
 
-Next, we'll implement the left and right movement using the keyboard arrow keys, as well as the jumping using the "space" or "up" key.
+In the code above, we create a `jump()` function for the "player" sprite, which checks that the player `isGrounded()` on a platform before making them jump. We pass the jumping force we declared at the beginning of the tutorial to the `jump()` function to specify how high the sprite can jump. We can use Kaboom's `jump()` function on our player object because we gave it a `body()` component when we added it.
+
+Next, we'll implement the left and right movement using the keyboard left and right arrow keys, and the jumping movement using the space bar or up arrow key.
 
 ```javascript
 onKeyPress(["space", "up"], jump)
@@ -276,12 +281,11 @@ onKeyDown("left", () => player.move(-PLAYER_SPEED, 0))
 onKeyDown("right", () => player.move(PLAYER_SPEED, 0))
 ```
 
-`PLAYER_SPEED` is a variable we declared at the beginning of the tutorial which emphasizes how fast the "player" sprite can move along the horizontal axis on a platform.
+We declared the variable `PLAYER_SPEED` at the beginning of the tutorial, and it specifies how fast the "player" sprite can move along the horizontal axis on a platform.
 
-## Add Party Members
+## Add party members
 
-In this section, we'll learn how to spawn game objects by making use of the timer functions.
-
+Let's learn how to spawn game objects by making use of the timer functions.
 
 Add the following code below the `onKeyPress` functions:
 
@@ -296,10 +300,10 @@ const members = [
 	"goldfly",
 ]
 ```
-This is our guest list! We're going to create a function to spawn each of these sprites in the "members" list onto the game screen at different times.
+
+This is our guest list! We're going to create a function to spawn each of these sprites in the `members` list onto the game screen at different times.
 
 Add the following code below the guest list:
-
 
 ```javascript
 function spawnFriend() {
@@ -324,9 +328,11 @@ function spawnFriend() {
 }
 ```
 
-The function `spawnFriend()` above chooses a random sprite from our list of members and adds them in different locations. Initially, each sprite is facing the right direction, `sprite(member, { flipX: dir.eq(LEFT) })`flips the default direction the sprites are facing if it is now headed left. Using the timer function `wait()` in the line `wait(rand(1, 3)), spawnFriend)` will let our program wait for different intervals between 1 and 3 seconds before adding a new friend and they move either in the left or right direction.
+The function `spawnFriend()` above chooses a random sprite from our list of members and adds them in different locations. Initially, each sprite is facing the towards the right. The line `sprite(member, { flipX: dir.eq(LEFT) })` flips the sprite to face left.
 
-The function `funky()`  adds a wavy animation to the sprites as they move, to give them a funky walking a effect, let's add it's implementation with the code bellow:
+We use the timer function `wait()` to specify that our program should wait for a randomly chosen interval of between one and three seconds before adding a new friend.
+
+Let's add some code to animate our sprites' movement:
 
 ```javascript
 function funky() {
@@ -342,7 +348,10 @@ function funky() {
 }
 
 ```
-Let's create a spawn function for our clouds too. To make bring a little animation to the sky. Add the following function below the `spawnFriend()`:
+
+The `funky()` function adds a wavy animation to the sprites as they move to give them a funky walking a effect.
+
+Let's create a spawn function for our clouds to add a little animation to the sky. Add the following function below the `spawnFriend()`:
 
 ```javascript
 function spawnCloud() {
@@ -363,7 +372,8 @@ function spawnCloud() {
 
 }
 ```
-This spawn function above works much similar to `spawnFriend()`. It spawns a random cloud from a different direction every 6 to 12 seconds. Let's call both these functions to execute the spawning. Add the following code below the functions:
+
+This spawn function spawns a random cloud from a different direction every six to twelve seconds. Let's call both these functions to execute the spawning. Add the following code below the functions:
 
 ```javascript
 
@@ -371,12 +381,11 @@ spawnCloud()
 spawnFriend()
 ```
 
-## The Sun Dance
+## The sun dance
 
-Using the `wave()` function is one way of animating sprites. Another function we can use is the `angle()`. Adding the rotate() component to an object lets us use `angle()` to rotate it at a specific angle at specific speeds.
+Using the `wave()` function is one way of animating sprites. Another function we can use is `angle()`. Adding the `rotate()` component to an object lets us use `angle()` to rotate it at a specific angle at specific speeds.
 
 Add the following code below the spawn function calls:
-
 
 ```javascript
 const sun = add([
@@ -392,20 +401,16 @@ sun.onUpdate(() => {
 })
 ```
 
-In the line `sun.angle += dt() * 12` we set the "sun" sprite to rotate a 12 degree angle infinitely.
+In the line `sun.angle += dt() * 12` we set the "sun" sprite to rotate at a 12 degree angle infinitely.
 
-
-That's it for our kaboom concert. We have successfully added animated objects to our live outdoor concert. Run the program to try out all the functionality we've implemented.  To see the `CamPos()` function in effect, make the "player" sprite collide with the last top note and see what happens.
+That's it for our Kaboom concert. Run the program now to try out all the functionality we've implemented. To see the `CamPos()` function in effect, make the "player" sprite collide with the last note.
 
 ### Things to try
 
-Visit this [link](https://kaboomjs.com/) for more Kaboom functions and components you can use if your programs.
-
 Here are some ideas to try:
 
-* Create an imitation mario game and add the `CamPos()` function to follow mario as he moves across the screen.
-
-* Create a Karaoke Machine with a list of songs and a user can choose from and a list of song lyrics to match which you an display on screen.
+* Create an imitation *Mario* game and add the `CamPos()` function to follow Mario as he moves across the screen.
+* Create a karaoke machine with a list of songs a user can choose from to display the lyrics onscreen.
 
 Try out the embedded repl below:
 
