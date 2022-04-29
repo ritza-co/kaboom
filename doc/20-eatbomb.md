@@ -1,16 +1,16 @@
-# Consuming Sprites with Kaboom
+# Eating bombs in Kaboom
 
-In this tutorial, we're going to create a mini-game, "eatbomb" to learn how we can consume other sprites in a game.
+In this tutorial, we'll create a minigame called "Eatbomb" to learn how we can consume other sprites in a game.
 
-In the game, the player has to dodge all incoming "fruit" sprites and consume only "bomb" sprites to gain points. The player loses if any "bomb" sprites are left uneaten.
+In our game, the player has to dodge all incoming "fruit" sprites and consume only "bomb" sprites to gain points. The player loses if any "bomb" sprites are left uneaten.
 
 ![eat-bombs](eatbombs.png)
 
-You can find the code for this tutorial at the following [link](https://replit.com/@ritza/eatbomb) or in the embedded code at the end of this tutorial.
+You can find the code for this tutorial [on our repl](https://replit.com/@ritza/eatbomb), or in the embedded repl at the end of this tutorial.
 
-## Getting Started 
+## Getting started 
 
-Let's start by importing the following code into our project to initiate a Kaboom context:
+Let's start by adding the following code to our project to initiate a Kaboom context:
 
 ```javascript
 kaboom({
@@ -18,9 +18,9 @@ background : [25,25,26]
 })
 ```
 
-The code above will create a dark grey background for our context. 
+This gives our context a dark grey background. 
 
-Let's also import the sprites and sounds we will use in the tutorial. The list `fruits` allows us to load different "fruit" sprites to our game. Add the following code below `kaboom()`:
+Let's import the sprites and sounds we will use in the tutorial. The list `fruits` allows us to load different "fruit" sprites to our game. Add the following code below `kaboom()`:
 
 ```javascript
 loadSprite("bean", "/sprites/bean.png")
@@ -41,7 +41,7 @@ for (const fruit of fruits) {
 ```
 
 
-## Starting scene
+## Adding the start scene
 
 In this section, we'll implement the scene that will be displayed when we start the game.
 
@@ -67,17 +67,17 @@ scene("start", () => {
 })
 ```
 
-In the code above, we use the "wooosh" sound to show that the game has started. We also add the text "Eat All" along with the "bomb" sprites at the center of the screen as the start screen - to show players which sprites to consume in the game.
+In the code above, we use the "wooosh" sound to show that the game has started. We add the text "Eat All" along with the "bomb" sprites at the center of the screen to show players which sprites to consume in the game.
 
 Using the `wait()` function, we let the program wait 1.5 seconds while displaying this start scene before it goes to the game scene and lets us start playing.
 
-## Main Game Scene
+## Adding the main game scene
 
-Games usually run in a loop where each iteration of the loop, all components are updated to show any changes to their state.
+Games usually run in a loop, and all components are updated with each iteration of the loop to show any changes to their state.
 
-The code in this section will all be written inside the main scene of the game.
+The code in this section will all be written in the game's main scene.
 
-Let's add a few constants for the movement of the sprites in the game, add the following code below the `for  loop()`:
+Let's add a few constants for the movement of the sprites in the game. Add the following code below the `for  loop()`:
 
 ```javascript
 scene("game", () => {
@@ -85,7 +85,8 @@ scene("game", () => {
 	const SPEED_MIN = 120
 	const SPEED_MAX = 540
 ```
-In the code above, the `scene()` function is the one where most of the code for the main game loop will be placed.
+
+We'll place most of the code for the main game loop in the `scene()` function.
 
 Now add the following code below the speed variables to create an object that will hold the sprite of our player:
 
@@ -98,9 +99,10 @@ Now add the following code below the speed variables to create an object that wi
 		origin("center"),
 	])
 ```
-The `scale()` function in the code above increases the size of the sprite. `pos()` and `origin()` allows us to set the player's starting position when the game starts.
 
-Let's add a function `scoreLabel()` below the player object to count the score.
+The `scale()` function increases the size of the sprite. We use `pos()` and `origin()` to set the player's starting position when the game starts.
+
+Let's add the function `scoreLabel()` below the player object to count the score:
 
 ```javascript
 	let score = 0
@@ -141,11 +143,12 @@ player.onCollide("fruit", (fruit) => {
 
 ```
 
-In the code above, we implemented what happens when the player collides with the "bomb" sprites. `addKaboom()` function will add the kaboom icon when the player eats a bomb. The `score` variable will increment the score each time player eats a bomb. `destroy()` will remove the sprite from the game screen as the player would have eaten it. `burp()` will make create the burp sound and `shake()` will shake the player sprite which is a cool effect to add.
+In the code above, we implement what happens when the player collides with a sprite. The `addKaboom()` function adds the kaboom icon when the player collides with a bomb, and the `score` variable will increment the score by one. We use `destroy()` to remove the sprite from the game screen, since the player has eaten it. We use `burp()` to play the burp sound, and `shake()` to add a cool shake effect to the player sprite.
 
-Using the `go()`, we've implemented that if the player eats other fruits, the "main" scene will end and the "lose" scene will begin to show that the player has lost the game. We're yet to implement the "lose" scene.
+If the player collides with a "fruit" sprite, we use `go()` to end the "main" scene and show the "lose" scene, which we'll implement shortly.
 
-Add the following code below the `onCollide()` to keep adding fruit and bomb sprites that keep moving towards the left edge of the screen:
+Add the following code below `onCollide()` to continue adding fruit and bomb sprites that move towards the left edge of the screen:
+
 ```javascript
 
   	onUpdate("bomb", (bomb) => {
@@ -165,9 +168,9 @@ Add the following code below the `onCollide()` to keep adding fruit and bomb spr
 
 ```
 
-In the code above, we update the game such that when "fruit" sprites reach the edge of the game screen they are destroyed but if the "bomb" sprite reaches the edge, the player loses the game.
+Here we update the game so that when "fruit" sprites reach the edge of the game screen they are destroyed, but if a "bomb" sprite reaches the edge, the player loses the game.
 
-Let's create a loop function to spawn "fruit" sprites for as long as the "main" scene is still active.
+Let's create a loop function to spawn "fruit" sprites for as long as the "main" scene is still active:
 
 ```javascript
 loop(0.3, () => {
@@ -193,15 +196,15 @@ loop(0.3, () => {
 })
 ```
 
-Inside the `loop()` function, we create constants `x` and `y` to spawn new fruits at random `y`/ horizontal positions on the right edge of the screen. The speed the fruits move at will be a random value between the min and max speed variables we created towards the beginning of the tutorial.
+Inside the `loop()` function, we create constants `x` and `y` to spawn new fruits at random `y` (horizontal) positions on the right edge of the screen. We set the speed the fruits will move at to a random value between the minimum and maximum speed variables we created earlier.
 
-The `spriteName` variable will check whether the current sprite is a "bomb" or "fruit" sprite.
+The `spriteName` variable will check whether the current sprite is a "bomb" sprite or "fruit" sprite.
 
-## Losing Scene
+## Adding the lose scene
 
-This scene will be active only when a player collides with the fruit sprites or one of the "bomb" sprites reaches the left edge of the game screen. The code in this section will all be placed inside the "lose" scene function.
+The lose scene will only be active when a player collides with a "fruit" sprite or one of the "bomb" sprites reaches the left edge of the game screen. We'll place the code in this section in the "lose" scene function.
 
-Once the player loses, the player sprite along with the score will be displayed on the screen. Add the following code below the closing bracket of the "main" scene to show this implementation:
+Once the player loses, the player sprite and the player's score will be displayed on the screen. Add the following code below the closing bracket of the "main" scene:
 
 ```javascript
 scene("lose", (score) => {
@@ -222,9 +225,9 @@ scene("lose", (score) => {
 	])
 ```
 
-In the code above, we've implemented that the player and the score be displayed in the center of the game screen.
+Here we specify that the player sprite and the score are displayed in the center of the game screen.
 
-Once the player has lost, we need to go back to the starting scene where they can press any key or the "space" button to restart the game. Add the following code:
+Once the player has lost, we need to go back to the starting scene so that they can press any key or the space bar to restart the game. Add the following code:
 
 ```javascript
 	onKeyPress("space", () => go("start"))
@@ -232,6 +235,7 @@ Once the player has lost, we need to go back to the starting scene where they ca
 
 })
 ```
+
 Outside the "lose" scene function, add the following code:
 
 ```javascript
@@ -239,11 +243,11 @@ go("start")
 
 ```
 
-This will display the "start" scene displayed before the game starts.
+This will display the "start" scene before the game starts.
 
 ### Things to try:
 
-* Create a mock Pacman game where enemy sprites chase you until you consume food, at which point you have few seconds to consume those enemy sprites.
+* Try making a Pac-Man-type game where enemy sprites chase the player until they consume food, at which point the player has few seconds to consume the enemy sprites.
 
 Try out the embedded repl below:
 
