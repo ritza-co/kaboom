@@ -1,14 +1,14 @@
-# Coin collector with Kaboom
+# How game scenes work in Kaboom
 
-In this tutorial, we're going to a create coin collector game to learn how game scenes work in Kaboom. In our game, our character will advance through to different levels by collecting all coins at each level.
+In this tutorial, we'll create a coin collector game to learn how game scenes work in Kaboom. In our game, our player will advance through to different levels by collecting all the coins at each level.
 
 ![scenes](scenes.png)
 
-You can find the code for this tutorial at this [link](https://replit.com/@ritza/scenes) or in the embedded code at the end of this tutorial.
+You can find the code we use here [on our repl](https://replit.com/@ritza/scenes), or in the embedded repl at the end of this tutorial.
 
 ## Getting started
 
-Let's begin by initializing a kaboom context. Add the following code to your project:
+Let's begin by initializing a Kaboom context. Add the following code to your project:
 
 ```javascript
 
@@ -18,7 +18,9 @@ kaboom({
 
 ```
 
-This code will create a context with a dark yellow background. Let's also add the sprites and sounds we will use for this tutorial, add the following code below the `kaboom()` function:
+This code will create a context with a dark yellow background.
+
+Next we'll add the sprites and sounds we need for our game. Add the following code below the `kaboom()` function:
 
 ```javascript
 loadSprite("bean", "/sprites/bean.png")
@@ -33,7 +35,7 @@ loadSound("portal", "/sounds/portal.mp3")
 
 ## Setting up the main scene
 
-A scene in Kaboom is a setting for a specific situation or condition. For instance, the "game" scene is the setup of the game displayed while we're still playing, if we lose the game we can cage the setup to a "lose" scene to display our score or that we lost.
+A scene in Kaboom is a setting for a specific situation or condition. For instance, the "game" scene is the setup of the game displayed while we're still playing. If we lose the game, we can change the setup to a "lose" scene to display our score or that we lost.
 
 Before we create the "game" scene, let's create a few constants for our game. Add the following code below the sprite imports:
 
@@ -53,10 +55,9 @@ const LEVELS = [
 
 ```
 
-The `SPEED` variable holds the speed of our player sprite and the list `LEVELS` holds a map for different levels through which the player can advance once all the coins in one level are collected. The symbols in the list represent the game objects to be added at different positions on the map.
+The `SPEED` variable holds the speed of our player sprite, and the `LEVELS` list holds a map for different levels through which the player can advance once all the coins in one level are collected. The symbols in the list represent the game objects to be added at different positions on the map.
 
-
-Now we're going to implement the "game" scene. Using the `scene()` function we can create a scene and specify the name of the scene in the first parameter of the function, we can also pass in variables or arrays in the second parameter (as a list), that we will use inside the scene. 
+Now we're going to implement the "game" scene. Using the `scene()` function, we can create a scene and specify the name of the scene in the first parameter. In the second parameter, we can pass (as a list) the variables or arrays that we'll use in the scene. 
 
 The rest of the code in this section will be implemented inside the `scene()` function. Add the following code below the `LEVELS` list:
 
@@ -67,11 +68,11 @@ scene("game", ({ levelIdx, score }) => {
 	gravity(2400)
 ```
 
-For the first line in the code above, we create a scene called "game". The variable `levelIdx` represents the current level of the game, which will be declared later on in the code,`score` is the score counter.
+In the first line in the code above, we create a scene called "game". The variable `levelIdx` represents the current level of the game, which will be declared later on in the code. The variable `score` is the score counter.
 
-With the `gravity()` function, we've created the gravity effect in the game to which any object with a `body()` component will respond.
+With the `gravity()` function, we've created the gravity effect in the game, and any object with a `body()` component will respond to it.
 
-Earlier we created a map of different levels with symbols representing different sprites. Let's assign the loaded sprites to the different symbols on the map
+Earlier we created a map of different levels with symbols representing different sprites. Let's assign the loaded sprites to the different symbols on the map:
 
 ```javascript  
 	const level = addLevel(LEVELS[levelIdx || 0], {
@@ -112,18 +113,19 @@ Earlier we created a map of different levels with symbols representing different
 	})
 ```
 
-Using the `sprite()` function, we specify which sprite the symbols are assigned. The `area()` creates a collider from the sprite shape and lets us detect collisions, and `origin()` gives the sprites a point of origin when the game starts.
+Using the `sprite()` function, we specify which sprite the symbols are assigned to. The `area()` component gives the sprites a collision area, and `origin()` gives the sprites a point of origin when the game starts.
 
-Let's create an object for our player sprite, add the following code below the `level` array:
+## Adding the player sprite and making them move
 
+Let's create an object for our player sprite. Add the following code below the `level` array:
 
 ```javascript
 	const player = get("player")[0]
 ```
 
-In the code above, we get the sprite with the tag "player", which is the first sprite in the array, and assign it to the variable `player`.
+Here we get the sprite with the tag `"player"` – which is the first sprite in the array – and assign it to the variable `player`.
 
-To give our player movement, let's use the `onKeyPress()` functions to use keyboard keys for movement. Add the following below the `player` variable:
+We'll use the `onKeyPress()` functions to allow us to use keyboard keys to move our player. Add the following below the `player` variable:
 
 ```javascript
 	onKeyPress("space", () => {
@@ -141,10 +143,13 @@ To give our player movement, let's use the `onKeyPress()` functions to use keybo
 	})
 ```
 
-In the code above, we use the "space" key to make our player jump. The `isGrounded()` checks if our player is standing on an object or platform before making them jump. The "left" and "right" arrow keys create a horizontal movement for the player.
+In the code above, we set the space key to make our player jump. We use `isGrounded()` to check if our player is standing on an object or platform before making them jump. The left and right arrow keys move our player horizontally.
 
+## Handling collisions
 
-There are a few collision events we need to implement. The first collision is for when the player collides with, that is "to collect", a coin. When this happens, we have to make the score increment and display it on the game screen, we'll also add the "score" sound to know when the score increments. Add this implemenation below the `onKeyDown()` function:
+There are a few collision events we need to implement.
+
+The first collision is when the player collides with a coin and "collects" it. Add this code below the `onKeyDown()` function:
 
 ```javascript
 	player.onCollide("coin", (coin) => {
@@ -155,9 +160,9 @@ There are a few collision events we need to implement. The first collision is fo
 	})
 ```
 
-The `destroy()` function above will remove the coin from the game screen once the player collects it.
+When our player collides with a coin, we use the `destroy()` function to remove the coin from the scene, we play the "score" sound, and we increment the score by one and display it on the game screen.
 
-We've added spikes in the game to create a little challenge for our player. If the player lands or touches the spikes they will die. Let's add this implementation with the following code:
+We've added spikes to our game to create a little challenge for our player – if the player lands on or touches a spike they will die! Add this code:
 
 ```javascript
 	player.onCollide("danger", () => {
@@ -167,9 +172,9 @@ We've added spikes in the game to create a little challenge for our player. If t
 
 ```
 
-The tag for the "spike" sprite in the code above, is "danger". Once the player collides with the spikes, we will use the `go()` function to switch to the "lose" scene which we are yet to implement.
+When we added the "spike" sprites, we gave them the tag "danger". When the player collides with a sprite with the "danger" tag, we use the `go()` function to switch to the "lose" scene (which we are yet to implement).
 
-The player can also fall off a platform due to the gravity in the game. If the player does fall, it will be game over. Let's add this functionality with the `onUpdate()` function to keep checking the player's `y` position to see if they have fallen off:
+The player can also fall off a platform due to the gravity in the game. If the player falls, the game will be over. Let's add this functionality with the `onUpdate()` function to keep checking the player's `y` position to see if they have fallen off:
 
 ```javascript
 	player.onUpdate(() => {
@@ -179,7 +184,7 @@ The player can also fall off a platform due to the gravity in the game. If the p
 	})
 ```
 
-The last collision event is for when the player reaches the "portal" sprite, in which case they will advance to the next level. Add the following code below the `onUpdate()` function:
+The last collision event we'll add is for when the player reaches the "portal" sprite, in which case they will advance to the next level. Add the following code below the `onUpdate()` function:
 
 ```javascript
 	player.onCollide("portal", () => {
@@ -197,7 +202,7 @@ The last collision event is for when the player reaches the "portal" sprite, in 
 	})
 ```
 
-In the code above, the line `if (levelIdx < LEVELS.length - 1)` will check which level the player is in and if there are move levels, it will let the player advance, or else it will switch to the "win" scene to show that the player has won the game.
+Here, the line `if (levelIdx < LEVELS.length - 1)` will check which level the player is in, and if there are more levels, it will let the player advance. Else it will switch to the "win" scene to show that the player has won the game.
 
 The following function will add the score as a text on screen. Add the code below to the previous `onCollide()` function:
 
@@ -211,9 +216,9 @@ The following function will add the score as a text on screen. Add the code belo
 
 ```
 
-## Winning or Losing
+## Winning or losing
 
-When the player wins the game, the scene will switch from the "game" to the "win" scene, in which case the number of coins collected will be displayed. Add the following code for the "win" scene, make sure it's outside the last bracket of the "game" scene:
+When the player wins the game, the scene will switch from the "game" scene to the "win" scene and the number of coins collected will be displayed. Add the following code for the "win" scene, making sure it's outside the last bracket of the "game" scene:
 
 ```javascript
 scene("win", ({ score }) => {
@@ -231,7 +236,7 @@ scene("win", ({ score }) => {
 
 ```
 
-Similarly, when a player loses, the scene will switch to that of the "lose" scene, where the text "You Lose" will be displayed. Add the following code below the "win" scene:
+Similarly, when a player loses, the scene will switch to the "lose" scene, and the text "You Lose" will be displayed. Add the following code below the "win" scene:
 
 ```javascript
 scene("lose", () => {
@@ -245,10 +250,9 @@ scene("lose", () => {
 })
 ```
 
-Both the "win" and "lose" scenes use the "onKeyPress(start)" function to switch the initial display before the game starts if they press on any key.
-The `start()` function is what switches the display from these scenes to the initial "game" scene.
+Both the "win" scene and "lose" scene use the "onKeyPress(start)" function to switch to the initial display before the game starts if any key is pressed. The `start()` function switches the display from these scenes to the initial "game" scene.
 
-Let's add the implementation of the `start()` function below the "lose" scene.
+Let's add the implementation of the `start()` function below the "lose" scene:
 
 ```javascript
 function start() {
@@ -261,12 +265,11 @@ function start() {
 start()
 ```
 
-The function above will also reset the score and level in the game so that the player can restart.
+This function will also reset the score and level in the game so that the player can restart.
 
-### Challenges to try:
+### Things to try:
 
-* Add a celebration scene where the player dances using animations and a celebrity sound, for each time the player reaches the portal before switching to the winning scene or the next level.
-
+* Add a celebration scene when the player reaches a portal before switching to the next level or the winning scene. Try making the player dance using animations and a celebration sound.
 * Add more levels to the game with an increased number of spikes.
 
 Try the embedded repl below:
