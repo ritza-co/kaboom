@@ -1,4 +1,4 @@
-# Shade Sprites with Kaboom
+# Shading sprites with Kaboom
 
 In this tutorial, we'll learn about the Kaboom shader function `loadShader()` and how to change the color of sprites or other game objects.
 
